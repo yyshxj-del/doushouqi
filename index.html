@@ -1,0 +1,3249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Q版萌宠翻牌斗兽棋 · 3D立体对战版</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Serif+SC:wght@600;700;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: radial-gradient(circle at 50% 10%, #1e293b 0%, #0f172a 70%, #090d16 100%);
+      color: #f8fafc;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .serif-title {
+      font-family: 'Noto Serif SC', serif;
+    }
+    .glass-panel {
+      background: rgba(30, 41, 59, 0.82);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.4);
+      border-radius: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.35);
+      border-radius: 4px;
+    }
+    .btn-action {
+      transition: all 0.16s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn-action:active:not(:disabled) {
+      transform: scale(0.95);
+    }
+    canvas {
+      touch-action: manipulation;
+    }
+    /* Q-Version Chibi Lawn Stage (Matches Uploaded Image 2!) */
+    .chibi-stage-shell {
+      background: linear-gradient(180deg, #74be2d 0%, #68b323 55%, #5da31d 100%);
+      border: 4px solid #a3e635;
+      box-shadow: 0 22px 50px rgba(0, 0, 0, 0.65), inset 0 2px 12px rgba(255, 255, 255, 0.35);
+      position: relative;
+      overflow: hidden;
+    }
+    .chibi-chain-bar {
+      background: linear-gradient(180deg, #3f6e18 0%, #2e5310 100%);
+      border: 2px solid #84cc16;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    /* Glossy 3D Yellow '求和' Button from Image 2 */
+    .btn-3d-draw {
+      background: linear-gradient(180deg, #ffe14d 0%, #f5b016 100%);
+      border: 2.5px solid #fff7cc;
+      box-shadow: 0 4px 0 #b87409, 0 6px 10px rgba(0, 0, 0, 0.28), inset 0 2px 2px rgba(255, 255, 255, 0.75);
+      color: #ffffff;
+      text-shadow: 0 1.5px 0 #9c5c05, 0 -1px 0 #9c5c05, 1.5px 0 0 #9c5c05, -1.5px 0 0 #9c5c05;
+      font-weight: 900;
+      letter-spacing: 1px;
+    }
+    .btn-3d-draw:active {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 #b87409;
+    }
+    /* Glossy 3D Orange-Red '认输' Button from Image 2 */
+    .btn-3d-surrender {
+      background: linear-gradient(180deg, #ff7e47 0%, #e54616 100%);
+      border: 2.5px solid #ffdecb;
+      box-shadow: 0 4px 0 #9e2606, 0 6px 10px rgba(0, 0, 0, 0.28), inset 0 2px 2px rgba(255, 255, 255, 0.7);
+      color: #ffffff;
+      text-shadow: 0 1.5px 0 #7f1d04, 0 -1px 0 #7f1d04, 1.5px 0 0 #7f1d04, -1.5px 0 0 #7f1d04;
+      font-weight: 900;
+      letter-spacing: 1px;
+    }
+    .btn-3d-surrender:active {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 #9e2606;
+    }
+    /* Center '我是红方 / 我是蓝方' Pill Badge from Image 2 */
+    .camp-pill-red {
+      background: linear-gradient(180deg, #f46677 0%, #e04456 100%);
+      border: 2.5px solid #ffc2c9;
+      box-shadow: 0 3px 0 #9e2231, 0 4px 8px rgba(0, 0, 0, 0.22);
+      color: #ffffff;
+      text-shadow: 0 1px 2px rgba(136, 19, 55, 0.8);
+    }
+    .camp-pill-blue {
+      background: linear-gradient(180deg, #38a3f8 0%, #1976d2 100%);
+      border: 2.5px solid #bae6fd;
+      box-shadow: 0 3px 0 #0d47a1, 0 4px 8px rgba(0, 0, 0, 0.22);
+      color: #ffffff;
+      text-shadow: 0 1px 2px rgba(12, 74, 110, 0.8);
+    }
+    .camp-pill-wait {
+      background: linear-gradient(180deg, #fbbf24 0%, #d97706 100%);
+      border: 2.5px solid #fef08a;
+      box-shadow: 0 3px 0 #92400e, 0 4px 8px rgba(0, 0, 0, 0.22);
+      color: #ffffff;
+      text-shadow: 0 1px 2px rgba(120, 53, 15, 0.8);
+    }
+  </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+  <!-- Top Navigation & Control Bar -->
+  <header class="w-full border-b border-slate-800/80 bg-slate-900/85 backdrop-blur-md sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-2">
+      <!-- Brand -->
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-lime-400 via-emerald-500 to-green-700 flex items-center justify-center shadow-lg shadow-lime-500/20 text-xl font-bold">
+          🐘
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="serif-title text-lg sm:text-xl font-bold tracking-wide text-amber-100">皇家斗兽棋</h1>
+            <span id="boardRuleBadge" class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-lime-500/20 text-lime-300 border border-lime-400/30">Q版立体萌宠版</span>
+          </div>
+          <p class="text-[11px] text-slate-400 hidden sm:block">首翻定色 · 残局比大小 · 同级主动对子胜 · 上一步轨迹提示</p>
+        </div>
+      </div>
+
+      <!-- Mode & Controls -->
+      <div class="flex items-center flex-wrap gap-1.5 sm:gap-2">
+        <!-- Theme Switcher (Q-Chibi 3D vs Classic Card) -->
+        <div class="inline-flex items-center gap-1 bg-slate-800/90 px-2 py-1 rounded-lg border border-slate-700/70" title="切换画风">
+          <span class="text-[11px] text-slate-400">画风</span>
+          <select id="visualThemeSelect" aria-label="棋盘画风" class="bg-transparent text-xs font-semibold text-lime-300 focus:outline-none cursor-pointer">
+            <option value="chibi3d" selected class="bg-slate-900 text-slate-100">Q版立体萌宠 (新图)</option>
+            <option value="classicpk" class="bg-slate-900 text-slate-100">经典卡牌PK (旧图)</option>
+          </select>
+        </div>
+
+        <!-- Same-Rank Rule Toggle -->
+        <div class="inline-flex items-center gap-1 bg-slate-800/90 px-2 py-1 rounded-lg border border-slate-700/70" title="非终局时相同等级棋子碰撞规则（注：最后各剩1张同级牌时固定为主动对子获胜）">
+          <span class="text-[11px] text-slate-400">同级</span>
+          <select id="sameRankRuleSelect" aria-label="同级吃子规则" class="bg-transparent text-xs font-semibold text-emerald-300 focus:outline-none cursor-pointer">
+            <option value="mutual" selected class="bg-slate-900 text-slate-100">同归于尽 (经典PK)</option>
+            <option value="attacker" class="bg-slate-900 text-slate-100">主动方吃掉对方</option>
+          </select>
+        </div>
+
+        <!-- Mode Selector -->
+        <div class="inline-flex rounded-lg bg-slate-800/90 p-0.5 border border-slate-700/70">
+          <button id="modePveBtn" type="button" class="btn-action px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-500 text-slate-950 shadow">
+            🤖 人机对战
+          </button>
+          <button id="modePvpBtn" type="button" class="btn-action px-2.5 py-1 rounded-md text-xs font-semibold text-slate-300 hover:text-white">
+            👥 双人同屏
+          </button>
+        </div>
+
+        <!-- AI Difficulty -->
+        <div id="aiDiffWrap" class="inline-flex items-center gap-1 bg-slate-800/90 px-2 py-1 rounded-lg border border-slate-700/70">
+          <span class="text-[11px] text-slate-400">难度</span>
+          <select id="aiDifficultySelect" aria-label="AI难度" class="bg-transparent text-xs font-semibold text-amber-300 focus:outline-none cursor-pointer">
+            <option value="1" class="bg-slate-900 text-slate-100">轻松 (新手)</option>
+            <option value="2" selected class="bg-slate-900 text-slate-100">标准 (进阶)</option>
+            <option value="3" class="bg-slate-900 text-slate-100">大师 (深算)</option>
+          </select>
+        </div>
+
+        <!-- Sound Toggle -->
+        <button id="soundToggleBtn" type="button" class="btn-action px-2.5 py-1.5 rounded-lg bg-slate-800/90 hover:bg-slate-700/80 border border-slate-700/70 text-xs font-medium text-slate-200 flex items-center gap-1" title="音效开关">
+          <span id="soundIcon">🔊</span>
+          <span class="hidden md:inline" id="soundLabel">音效</span>
+        </button>
+
+        <!-- Rules Button -->
+        <button id="openRulesBtn" type="button" class="btn-action px-2.5 py-1.5 rounded-lg bg-slate-800/90 hover:bg-slate-700/80 border border-slate-700/70 text-xs font-medium text-amber-300 flex items-center gap-1">
+          <span>📜</span>
+          <span>规则图鉴</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-2 sm:px-5 py-3 grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+
+    <!-- Left Column: Status, Players & Piece Inspector -->
+    <section class="lg:col-span-3 flex flex-col gap-3 order-2 lg:order-1">
+      <!-- Turn & Status Card -->
+      <div class="glass-panel rounded-2xl p-3.5 shadow-xl">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-medium text-slate-400">当前回合</span>
+          <div class="flex items-center gap-1.5">
+            <span class="text-[11px] text-amber-300 font-semibold">⏱️ <span id="turnTimerText">30</span>s</span>
+            <span id="turnCountBadge" class="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300">第 1 手</span>
+          </div>
+        </div>
+
+        <div id="turnBanner" class="flex items-center justify-between p-2.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/10 border border-amber-500/40 transition-all">
+          <div class="flex items-center gap-2.5">
+            <span id="turnDot" class="w-3.5 h-3.5 rounded-full bg-amber-400 shadow-md shadow-amber-400/50 animate-pulse"></span>
+            <div>
+              <div id="turnTitle" class="text-sm font-bold text-amber-200">自己行棋 (首翻定色)</div>
+              <div id="turnSubtitle" class="text-[11px] text-slate-300">请翻开第1张“?”方块决定您的颜色</div>
+            </div>
+          </div>
+          <div id="aiThinkingBadge" class="hidden text-xs font-semibold px-2 py-1 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-400/30 animate-pulse">
+            思考中...
+          </div>
+        </div>
+
+        <!-- Compact Player Avatars & Camp Status -->
+        <div class="mt-2.5 p-2 rounded-xl bg-slate-900/65 border border-slate-800 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div id="selfAvatarRing" class="w-8 h-8 rounded-full p-0.5 bg-gradient-to-b from-amber-300 to-amber-600 ring-2 ring-amber-300 flex items-center justify-center text-sm">
+              🧒
+            </div>
+            <div>
+              <div class="text-xs font-bold text-white leading-tight">自己 <span class="text-[10px] text-slate-400 font-normal">兔兔兔兔*</span></div>
+              <span id="selfSideBadge" class="text-[10px] font-bold text-amber-300">自己·待定</span>
+            </div>
+          </div>
+          <span class="text-xs font-black italic text-amber-400">VS</span>
+          <div class="flex items-center gap-2 text-right">
+            <div>
+              <div id="oppNicknameText" class="text-xs font-bold text-white leading-tight">L.eason</div>
+              <span id="oppSideBadge" class="text-[10px] font-bold text-slate-400">对手·待定</span>
+            </div>
+            <div id="oppAvatarRing" class="w-8 h-8 rounded-full p-0.5 bg-gradient-to-b from-slate-300 to-slate-600 flex items-center justify-center text-sm">
+              👦
+            </div>
+          </div>
+        </div>
+
+        <!-- Unflipped Cards Counter -->
+        <div class="mt-2.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-between text-xs">
+          <span class="text-amber-200 font-medium">❓ 场上未翻开盲盒方块</span>
+          <span id="unflippedCountBadge" class="font-mono font-bold text-amber-300">16 张</span>
+        </div>
+
+        <!-- Player Score / Remaining Summary -->
+        <div class="grid grid-cols-2 gap-2 mt-2.5">
+          <!-- Red Side Info -->
+          <div class="p-2.5 rounded-xl bg-rose-950/40 border border-rose-500/25">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-rose-300 flex items-center gap-1">
+                <span class="w-2 h-2 rounded-full bg-rose-400"></span> 红方 <span id="redRoleTag" class="text-[10px] font-normal text-rose-400/80">(待定)</span>
+              </span>
+              <span id="redAliveCount" class="text-xs font-mono font-bold text-rose-200">8只</span>
+            </div>
+            <div class="mt-1.5 text-[11px] text-slate-400">已阵亡：</div>
+            <div id="redCapturedList" class="min-h-[24px] mt-0.5 flex flex-wrap gap-1 text-xs text-slate-300">
+              <span class="text-[11px] text-slate-500">暂无</span>
+            </div>
+          </div>
+
+          <!-- Blue Side Info -->
+          <div class="p-2.5 rounded-xl bg-sky-950/40 border border-sky-500/25">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-sky-300 flex items-center gap-1">
+                <span class="w-2 h-2 rounded-full bg-sky-400"></span> 蓝方 <span id="blueRoleTag" class="text-[10px] font-normal text-sky-400/80">(待定)</span>
+              </span>
+              <span id="blueAliveCount" class="text-xs font-mono font-bold text-sky-200">8只</span>
+            </div>
+            <div class="mt-1.5 text-[11px] text-slate-400">已阵亡：</div>
+            <div id="blueCapturedList" class="min-h-[24px] mt-0.5 flex flex-wrap gap-1 text-xs text-slate-300">
+              <span class="text-[11px] text-slate-500">暂无</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Selected Animal Matchup Inspector -->
+      <div class="glass-panel rounded-2xl p-3.5 shadow-xl">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-amber-300/90 flex items-center gap-1.5">
+            <span>🔍</span> 选中棋子克制情报
+          </h2>
+          <span id="selectedRankPill" class="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">未选中</span>
+        </div>
+
+        <div id="inspectorContent" class="text-xs text-slate-300 space-y-2">
+          <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-800 text-center text-slate-400">
+            点击任意已翻开的萌宠方块，即可查看它的战力等级、可捕食目标与天敌关系。
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Rank Reference Bar -->
+      <div class="glass-panel rounded-2xl p-3.5 shadow-xl">
+        <div class="text-xs font-bold text-slate-300 mb-2 flex items-center justify-between">
+          <span>👑 战斗力排行榜 (8 → 1)</span>
+          <span class="text-[11px] text-amber-300 font-medium">特例：1鼠克8象</span>
+        </div>
+        <div id="rankStrip" class="grid grid-cols-4 gap-1.5 text-center">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Center Column: Exact Image-2 Style Q-Chibi 3D Block Game Stage -->
+    <section class="lg:col-span-6 flex flex-col items-center order-1 lg:order-2">
+      <div id="boardContainer" class="w-full max-w-[470px] flex flex-col items-center">
+
+        <!-- Stage Shell (Matches Image 2 Layout: Top Chain Bar -> 求和 | 我是红方 | 认输 -> 4x4 3D Pedestal Board) -->
+        <div id="canvasHost" class="w-full chibi-stage-shell rounded-[30px] p-3 sm:p-4 shadow-2xl">
+
+          <!-- Row 1: Top Chibi Animal Hierarchy Chain Bar (象 > 狮 > 虎 > 豹 > 狼 > 狗 > 猫 > 鼠 > 象) -->
+          <div class="chibi-chain-bar rounded-full px-2.5 py-1.5 mb-3 flex items-center justify-between">
+            <div id="pkChainBar" class="w-full flex items-center justify-between px-0.5">
+              <!-- Populated dynamically with cute animal icons & yellow '>' arrows -->
+            </div>
+          </div>
+
+          <!-- Row 2: Exact Image-2 Header Controls: [求和]  [我是红方 / 我是蓝方]  [认输] -->
+          <div class="flex items-center justify-between px-2 sm:px-4 mb-3 gap-2">
+            <button id="topDrawBtn" type="button" class="btn-action btn-3d-draw px-5 sm:px-6 py-1.5 rounded-full text-sm sm:text-base">
+              求和
+            </button>
+
+            <div id="centerCampPill" class="camp-pill-wait px-4 sm:px-5 py-1 rounded-full text-xs sm:text-sm font-extrabold tracking-wide whitespace-nowrap transition-all">
+              首翻定色
+            </div>
+
+            <button id="topSurrenderBtn" type="button" class="btn-action btn-3d-surrender px-5 sm:px-6 py-1.5 rounded-full text-sm sm:text-base">
+              认输
+            </button>
+          </div>
+
+          <!-- Row 3: Interactive 4x4 3D Pedestal & Chibi Block Board Canvas -->
+          <div class="relative w-full flex justify-center">
+            <canvas id="gameCanvas" class="w-full block rounded-2xl cursor-pointer"></canvas>
+
+            <!-- In-Board Toast Banner -->
+            <div id="boardToast" class="pointer-events-none opacity-0 transition-opacity duration-300 absolute top-3 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-slate-950/90 border border-amber-400/70 text-amber-200 text-xs sm:text-sm font-bold shadow-xl whitespace-nowrap z-20">
+              提示信息
+            </div>
+          </div>
+
+          <!-- Bottom Stage Status & Quick Utility Icons -->
+          <div class="mt-2.5 flex items-center justify-between px-1 text-xs gap-1">
+            <div class="flex items-center gap-1">
+              <button id="stageResetBtn" type="button" title="重新洗牌开局" class="btn-action w-7 h-7 rounded-full bg-black/25 hover:bg-black/35 text-white font-bold flex items-center justify-center">
+                ‹
+              </button>
+              <button id="drawOfferBtn" type="button" class="btn-action px-2.5 py-1 rounded-full bg-white/85 hover:bg-white text-emerald-900 font-bold shadow text-[11px]">
+                🤝 求和
+              </button>
+            </div>
+            <span id="stageHintLabel" class="text-[11px] font-bold text-white drop-shadow text-center truncate">
+              首翻颜色即为本局您的专属阵营
+            </span>
+            <div class="flex items-center gap-1">
+              <button id="surrenderBtn" type="button" class="btn-action px-2.5 py-1 rounded-full bg-white/85 hover:bg-white text-rose-800 font-bold shadow text-[11px]">
+                🏳️ 认输
+              </button>
+              <button id="stageSoundBtn" type="button" title="切换音效" class="btn-action w-7 h-7 rounded-full bg-black/25 hover:bg-black/35 text-white font-bold flex items-center justify-center">
+                🔊
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Toolbar Under Board -->
+        <div class="w-full mt-3 grid grid-cols-4 gap-2">
+          <button id="undoBtn" type="button" class="btn-action py-2 px-3 rounded-xl glass-panel hover:bg-slate-800 text-xs sm:text-sm font-semibold text-slate-200 flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed">
+            <span>↩️</span> <span>悔棋</span>
+          </button>
+          <button id="hintBtn" type="button" class="btn-action py-2 px-3 rounded-xl glass-panel hover:bg-slate-800 text-xs sm:text-sm font-semibold text-amber-300 flex items-center justify-center gap-1.5 disabled:opacity-40">
+            <span>💡</span> <span>AI提示</span>
+          </button>
+          <button id="flipBtn" type="button" class="btn-action py-2 px-3 rounded-xl glass-panel hover:bg-slate-800 text-xs sm:text-sm font-semibold text-sky-300 flex items-center justify-center gap-1.5">
+            <span>🔄</span> <span>翻转棋盘</span>
+          </button>
+          <button id="restartBtn" type="button" class="btn-action py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs sm:text-sm font-bold shadow-lg shadow-amber-500/20 flex items-center justify-center gap-1.5">
+            <span>⚔️</span> <span>新对局</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Column: Move History & On-Screen Tactile Controller -->
+    <section class="lg:col-span-3 flex flex-col gap-3 order-3">
+      <!-- On-Screen Tactile Controller + Keyboard Guide -->
+      <div class="glass-panel rounded-2xl p-3.5 shadow-xl">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+            <span>🎮</span> 虚拟方向键 / 键盘操控
+          </h2>
+          <span id="cursorCoordBadge" class="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-800 text-amber-300">B2</span>
+        </div>
+        <p class="text-[11px] text-slate-400 mb-2.5">
+          除直接点击方块翻牌/走子外，也可使用方向键 / WASD 或下方按钮操控：
+        </p>
+
+        <div class="grid grid-cols-3 gap-1.5 max-w-[210px] mx-auto">
+          <div></div>
+          <button id="padUpBtn" type="button" aria-label="向上" class="btn-action py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sm font-bold text-slate-200">
+            ▲
+          </button>
+          <div></div>
+          <button id="padLeftBtn" type="button" aria-label="向左" class="btn-action py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sm font-bold text-slate-200">
+            ◀
+          </button>
+          <button id="padSelectBtn" type="button" aria-label="确认翻牌、选子或落子" class="btn-action py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold shadow">
+            选/走
+          </button>
+          <button id="padRightBtn" type="button" aria-label="向右" class="btn-action py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sm font-bold text-slate-200">
+            ▶
+          </button>
+          <div></div>
+          <button id="padDownBtn" type="button" aria-label="向下" class="btn-action py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sm font-bold text-slate-200">
+            ▼
+          </button>
+          <div></div>
+        </div>
+      </div>
+
+      <!-- Move Log -->
+      <div class="glass-panel rounded-2xl p-3.5 shadow-xl flex flex-col h-[285px]">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+            <span>📖</span> 战报着法记录
+          </h2>
+          <span id="moveTotalText" class="text-[11px] text-slate-400">共 0 步</span>
+        </div>
+        <div id="moveLogContainer" class="flex-1 overflow-y-auto custom-scroll space-y-1.5 pr-1 text-xs">
+          <div class="text-slate-500 text-center py-8">对局尚未开始，请自己翻开第一张牌定色</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Victory / Game Over Modal -->
+  <div id="victoryModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass-panel max-w-md w-full rounded-3xl p-6 border border-amber-400/40 shadow-2xl text-center">
+      <div id="victoryEmoji" class="text-5xl mb-3">🏆</div>
+      <h2 id="victoryTitle" class="serif-title text-2xl font-black text-amber-200 mb-1">自己获胜！</h2>
+      <p id="victoryReason" class="text-sm text-slate-300 mb-5">成功消灭对手全部猛兽，赢得森林霸主之位！</p>
+
+      <div class="grid grid-cols-3 gap-2 mb-5 p-3 rounded-2xl bg-slate-900/80 border border-slate-800 text-xs">
+        <div>
+          <div class="text-slate-400">总回合数</div>
+          <div id="statTotalMoves" class="text-base font-bold text-amber-300 mt-0.5">24</div>
+        </div>
+        <div>
+          <div class="text-slate-400">红方剩余</div>
+          <div id="statRedLeft" class="text-base font-bold text-rose-300 mt-0.5">5只</div>
+        </div>
+        <div>
+          <div class="text-slate-400">蓝方剩余</div>
+          <div id="statBlueLeft" class="text-base font-bold text-sky-300 mt-0.5">0只</div>
+        </div>
+      </div>
+
+      <div class="flex gap-2.5 justify-center">
+        <button id="modalReviewBtn" type="button" class="btn-action flex-1 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold border border-slate-700">
+          查看终局棋盘
+        </button>
+        <button id="modalPlayAgainBtn" type="button" class="btn-action flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-sm font-bold shadow-lg">
+          再来一局
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rules & Guide Modal -->
+  <div id="rulesModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass-panel max-w-2xl w-full max-h-[86vh] rounded-3xl p-5 sm:p-6 border border-slate-700 shadow-2xl flex flex-col">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">📜</span>
+          <h2 class="serif-title text-lg sm:text-xl font-bold text-amber-200">Q版立体翻牌斗兽棋 · 规则图鉴</h2>
+        </div>
+        <button id="closeRulesBtn" type="button" class="btn-action w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-sm font-bold">
+          ✕
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto custom-scroll py-4 space-y-4 text-xs sm:text-sm text-slate-300 leading-relaxed pr-1">
+        <div class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-1.5">
+          <h3 class="font-bold text-amber-300">🎯 核心三大规则</h3>
+          <p>1. <strong>首翻定色：</strong>开局由“自己”先手翻牌，<strong>自己第一次翻出方块的颜色（红或蓝）即成为本局自己的专属阵营</strong>（顶部中央徽章会同步显示“我是红方”或“我是蓝方”）。</p>
+          <p>2. <strong>单挑残局（最后各剩1张 · 同级）：</strong>当双方<strong>最后各剩一张牌且等级相同时</strong>，<strong>谁能主动发起对子（主动撞向对方同级牌）谁直接获胜</strong>；若均无法主动对子则判为<strong>和棋</strong>。</p>
+          <p>3. <strong>单挑残局（最后各剩1张 · 不同级）：</strong>当双方<strong>最后各剩一张牌且大小不同时</strong>，<strong>无需再走牌，牌面更大（或鼠克象）的一方直接获胜</strong>！</p>
+          <p>4. <strong>弱者撞强者自杀机制：</strong>当己方<strong>弱小棋子相邻敌方强大棋子</strong>（例如猫碰虎、象碰鼠等）时，<strong>允许主动撞向强者采取「自杀」形式自我灭亡</strong>（可用于战术送子触发1v1残局直接获胜或腾出关键路线）！</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="p-3.5 rounded-2xl bg-slate-900/70 border border-slate-800">
+            <h3 class="font-bold text-rose-300 mb-1.5">🐾 克制链条与吃子规则</h3>
+            <p class="mb-1.5">顶部萌宠克制条：<strong class="text-amber-200">象 &gt; 狮 &gt; 虎 &gt; 豹 &gt; 狼 &gt; 狗 &gt; 猫 &gt; 鼠 &gt; 象</strong>。</p>
+            <ul class="list-disc list-inside space-y-1 text-slate-400">
+              <li>高阶动物可吃低阶动物（如虎可吃豹、狼、狗、猫、鼠）。</li>
+              <li><strong class="text-emerald-300">唯一特例：1级鼠可吃8级象</strong>，而8级象不能吃鼠！</li>
+              <li>未翻开的“?”放射纹木块不可直接被吃，必须先翻开后才能攻击。</li>
+            </ul>
+          </div>
+
+          <div class="p-3.5 rounded-2xl bg-slate-900/70 border border-slate-800">
+            <h3 class="font-bold text-sky-300 mb-1.5">✨ 特色指示标记</h3>
+            <ul class="list-disc list-inside space-y-1 text-slate-400">
+              <li><strong>「上一步」气泡与方向箭头：</strong>每次翻牌或走子后，棋盘会显示红/蓝立体方向箭头与“上一步”角标，清晰还原对局轨迹。</li>
+              <li><strong>画风切换：</strong>顶部支持在“Q版立体萌宠”与“经典卡牌PK”两种画面模式间无缝切换。</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-slate-800 flex justify-end">
+        <button id="gotItRulesBtn" type="button" class="btn-action px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs sm:text-sm">
+          明白，返回对局
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      // ==========================================
+      // 1. CONSTANTS & ANIMAL DEFINITIONS
+      // ==========================================
+      const COLS = 4;
+      const ROWS = 4;
+      const SIDE_RED = 'red';
+      const SIDE_BLUE = 'blue';
+      const ROLE_SELF = 'self';
+      const ROLE_OPP = 'opp';
+      const TURN_SECONDS = 30;
+      const MAX_1V1_EQUAL_STEPS = 10;
+
+      const ANIMALS = {
+        8: { rank: 8, name: '象', title: '星帽萌象', emoji: '🐘', skill: '陆地霸主，可吃除鼠外一切明牌，但被灵鼠克制！' },
+        7: { rank: 7, name: '狮', title: '蓬蓬雄狮', emoji: '🦁', skill: '百兽之王，仅次于大象，也不惧灵鼠。' },
+        6: { rank: 6, name: '虎', title: '王字萌虎', emoji: '🐯', skill: '额刻王字，威猛无比，可压制豹狼狗猫鼠。' },
+        5: { rank: 5, name: '豹', title: '斑点猎豹', emoji: '🐆', skill: '敏捷猎手，中坚战力，可吃狼、狗、猫、鼠。' },
+        4: { rank: 4, name: '狼', title: '刀疤灰狼', emoji: '🐺', skill: '右眼带疤的酷炫灰狼，可吃狗、猫、鼠。' },
+        3: { rank: 3, name: '狗', title: '吐舌巴哥', emoji: '🐕', skill: '呆萌忠诚的巴哥犬，可吃灵猫与灵鼠。' },
+        2: { rank: 2, name: '猫', title: '花斑萌猫', emoji: '🐱', skill: '灵巧敏捷的小花猫，专克敌方吃象灵鼠！' },
+        1: { rank: 1, name: '鼠', title: '粉耳仓鼠', emoji: '🐭', skill: '以小博大！唯一能吃掉8级巨象的奇兵！' }
+      };
+
+      function coordLabel(col, row) {
+        const letters = ['A', 'B', 'C', 'D'];
+        return letters[col] + (ROWS - row);
+      }
+
+      // ==========================================
+      // 2. SYNTHESIZED SOUND ENGINE (Web Audio API)
+      // ==========================================
+      class SoundEngine {
+        constructor() {
+          this.ctx = null;
+          this.enabled = true;
+        }
+
+        init() {
+          if (!this.ctx) {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (AudioCtx) {
+              this.ctx = new AudioCtx();
+            }
+          }
+          if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume();
+          }
+        }
+
+        playTone(freq, type, duration, gainVal = 0.12, slideTo = null) {
+          if (!this.enabled) return;
+          try {
+            this.init();
+            if (!this.ctx) return;
+            const now = this.ctx.currentTime;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, now);
+            if (slideTo) {
+              osc.frequency.exponentialRampToValueAtTime(slideTo, now + duration);
+            }
+            gain.gain.setValueAtTime(gainVal, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now);
+            osc.stop(now + duration);
+          } catch (e) {
+            // Ignore audio errors
+          }
+        }
+
+        flip() {
+          this.playTone(390, 'sine', 0.11, 0.12, 780);
+        }
+
+        select() {
+          this.playTone(540, 'sine', 0.08, 0.09, 680);
+        }
+
+        move() {
+          this.playTone(320, 'triangle', 0.1, 0.11, 240);
+        }
+
+        capture() {
+          this.playTone(200, 'sawtooth', 0.16, 0.15, 95);
+          setTimeout(() => this.playTone(480, 'triangle', 0.14, 0.13, 660), 55);
+        }
+
+        mutual() {
+          this.playTone(240, 'sawtooth', 0.2, 0.15, 90);
+          setTimeout(() => this.playTone(170, 'square', 0.18, 0.12, 75), 70);
+        }
+
+        invalid() {
+          this.playTone(160, 'sawtooth', 0.14, 0.09, 120);
+        }
+
+        win() {
+          const notes = [523.25, 659.25, 783.99, 1046.5];
+          notes.forEach((n, idx) => {
+            setTimeout(() => this.playTone(n, 'triangle', 0.25, 0.14), idx * 110);
+          });
+        }
+      }
+
+      const sound = new SoundEngine();
+
+      // ==========================================
+      // 3. GAME STATE & CORE ENGINE
+      // ==========================================
+      const state = {
+        board: [],
+        visualTheme: 'chibi3d', // 'chibi3d' (Image 2 Q-version 3D) | 'classicpk' (Image 1 Card)
+        turnRole: ROLE_SELF,
+        selfSide: null,
+        oppSide: null,
+        mode: 'pve',
+        aiDifficulty: 2,
+        sameRankRule: 'mutual',
+        selected: null,
+        legalMoves: [],
+        lastMove: null,         // { type: 'flip'|'move', side, fromCol, fromRow, toCol, toRow }
+        hintMove: null,
+        cursor: { col: 1, row: 2 },
+        flipped: false,
+        history: [],
+        moveLog: [],
+        equal1v1Steps: 0,
+        gameOver: false,
+        winnerRole: null,
+        winnerSide: null,
+        winReason: '',
+        aiThinking: false,
+        aiTimer: null,
+        turnTimeLeft: TURN_SECONDS,
+        turnInterval: null,
+        flipAnim: null,
+        slideAnim: null,
+        particles: [],
+        lawnBlades: []
+      };
+
+      for (let i = 0; i < 16; i++) {
+        state.lawnBlades.push({
+          rx: 0.05 + (i * 0.19) % 0.9,
+          ry: 0.06 + ((i * 0.27) % 0.88),
+          size: 3 + (i % 3)
+        });
+      }
+
+      function getActiveSide() {
+        if (!state.selfSide) return null;
+        return state.turnRole === ROLE_SELF ? state.selfSide : state.oppSide;
+      }
+
+      function getRoleForSide(side) {
+        if (!state.selfSide) return null;
+        return side === state.selfSide ? ROLE_SELF : ROLE_OPP;
+      }
+
+      function getRoleLabel(role) {
+        if (role === ROLE_SELF) {
+          const c = state.selfSide ? (state.selfSide === SIDE_RED ? '·红方' : '·蓝方') : '';
+          return `自己${c}`;
+        }
+        const c = state.oppSide ? (state.oppSide === SIDE_RED ? '·红方' : '·蓝方') : '';
+        return `对手${c}`;
+      }
+
+      function createEmptyBoard() {
+        const b = [];
+        for (let r = 0; r < ROWS; r++) {
+          b.push(new Array(COLS).fill(null));
+        }
+        return b;
+      }
+
+      function cloneBoard(board) {
+        const next = createEmptyBoard();
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            if (board[r][c]) {
+              next[r][c] = { ...board[r][c] };
+            }
+          }
+        }
+        return next;
+      }
+
+      function shuffleArray(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          const temp = arr[i];
+          arr[i] = arr[j];
+          arr[j] = temp;
+        }
+        return arr;
+      }
+
+      function countRemainingPieces(board) {
+        const redPieces = [];
+        const bluePieces = [];
+        let unflipped = 0;
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            const p = board[r][c];
+            if (!p) continue;
+            if (!p.revealed) unflipped++;
+            if (p.side === SIDE_RED) redPieces.push(p);
+            else bluePieces.push(p);
+          }
+        }
+        return { redPieces, bluePieces, unflipped };
+      }
+
+      function compareDifferentPieceRanks(pA, pB) {
+        if (pA.rank === pB.rank) return null;
+        if (pA.rank === 1 && pB.rank === 8) return pA.side;
+        if (pA.rank === 8 && pB.rank === 1) return pB.side;
+        return pA.rank > pB.rank ? pA.side : pB.side;
+      }
+
+      function startTurnTimer() {
+        if (state.turnInterval) clearInterval(state.turnInterval);
+        state.turnTimeLeft = TURN_SECONDS;
+        const timerEl = document.getElementById('turnTimerText');
+        if (timerEl) timerEl.textContent = String(state.turnTimeLeft);
+
+        state.turnInterval = setInterval(() => {
+          if (state.gameOver) {
+            clearInterval(state.turnInterval);
+            return;
+          }
+          state.turnTimeLeft = Math.max(0, state.turnTimeLeft - 1);
+          if (timerEl) timerEl.textContent = String(state.turnTimeLeft);
+
+          if (state.turnTimeLeft === 0 && !state.aiThinking) {
+            const activeSide = getActiveSide();
+            const autoAct = computeBestAction(state.board, activeSide, 1);
+            if (autoAct) {
+              showToast('⏰ 回合超时，已自动为您行动！');
+              performAction(autoAct);
+            }
+          }
+        }, 1000);
+      }
+
+      function initGame() {
+        if (state.aiTimer) {
+          clearTimeout(state.aiTimer);
+          state.aiTimer = null;
+        }
+        const deck = [];
+        for (let rank = 1; rank <= 8; rank++) {
+          deck.push({ id: `red_${rank}`, side: SIDE_RED, rank, revealed: false });
+          deck.push({ id: `blue_${rank}`, side: SIDE_BLUE, rank, revealed: false });
+        }
+        shuffleArray(deck);
+
+        state.board = createEmptyBoard();
+        let idx = 0;
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            state.board[r][c] = {
+              ...deck[idx++],
+              col: c,
+              row: r
+            };
+          }
+        }
+
+        state.turnRole = ROLE_SELF;
+        state.selfSide = null;
+        state.oppSide = null;
+        state.selected = null;
+        state.legalMoves = [];
+        state.lastMove = null;
+        state.hintMove = null;
+        state.cursor = { col: 1, row: 2 };
+        state.history = [];
+        state.moveLog = [];
+        state.equal1v1Steps = 0;
+        state.gameOver = false;
+        state.winnerRole = null;
+        state.winnerSide = null;
+        state.winReason = '';
+        state.aiThinking = false;
+        state.flipAnim = null;
+        state.slideAnim = null;
+        state.particles = [];
+
+        document.getElementById('victoryModal').classList.add('hidden');
+        startTurnTimer();
+        updateUI();
+        updateInspector(null);
+      }
+
+      // Returns: 'win' | 'endgame_pair_win' | 'mutual' | 'suicide' | null
+      function getAttackOutcome(board, attacker, defender) {
+        if (!attacker.revealed || !defender.revealed) return null;
+        if (attacker.side === defender.side) return null;
+
+        if (attacker.rank === defender.rank) {
+          const { redPieces, bluePieces } = countRemainingPieces(board);
+          if (redPieces.length === 1 && bluePieces.length === 1) {
+            return 'endgame_pair_win';
+          }
+          return state.sameRankRule === 'mutual' ? 'mutual' : 'win';
+        }
+
+        if (attacker.rank === 1 && defender.rank === 8) return 'win';
+        // 8象撞1鼠，或者低阶撞高阶：采取「自杀」形式自己灭亡！
+        if (attacker.rank === 8 && defender.rank === 1) return 'suicide';
+
+        return attacker.rank > defender.rank ? 'win' : 'suicide';
+      }
+
+      function getLegalMovesForPiece(board, piece) {
+        if (!piece || !piece.revealed) return [];
+        const moves = [];
+        const { col, row } = piece;
+        const dirs = [
+          { dc: 0, dr: -1 },
+          { dc: 0, dr: 1 },
+          { dc: -1, dr: 0 },
+          { dc: 1, dr: 0 }
+        ];
+
+        for (const { dc, dr } of dirs) {
+          const nc = col + dc;
+          const nr = row + dr;
+          if (nc < 0 || nc >= COLS || nr < 0 || nr >= ROWS) continue;
+
+          const target = board[nr][nc];
+          if (!target) {
+            moves.push({
+              type: 'move',
+              fromCol: col,
+              fromRow: row,
+              toCol: nc,
+              toRow: nr,
+              isCapture: false,
+              isMutual: false,
+              isSuicide: false,
+              isEndgamePairWin: false,
+              capturedPiece: null
+            });
+          } else if (target.revealed && target.side !== piece.side) {
+            const outcome = getAttackOutcome(board, piece, target);
+            if (outcome === 'win') {
+              moves.push({
+                type: 'move',
+                fromCol: col,
+                fromRow: row,
+                toCol: nc,
+                toRow: nr,
+                isCapture: true,
+                isMutual: false,
+                isSuicide: false,
+                isEndgamePairWin: false,
+                capturedPiece: target
+              });
+            } else if (outcome === 'endgame_pair_win') {
+              moves.push({
+                type: 'move',
+                fromCol: col,
+                fromRow: row,
+                toCol: nc,
+                toRow: nr,
+                isCapture: true,
+                isMutual: false,
+                isSuicide: false,
+                isEndgamePairWin: true,
+                capturedPiece: target
+              });
+            } else if (outcome === 'mutual') {
+              moves.push({
+                type: 'move',
+                fromCol: col,
+                fromRow: row,
+                toCol: nc,
+                toRow: nr,
+                isCapture: true,
+                isMutual: true,
+                isSuicide: false,
+                isEndgamePairWin: false,
+                capturedPiece: target
+              });
+            } else if (outcome === 'suicide') {
+              moves.push({
+                type: 'move',
+                fromCol: col,
+                fromRow: row,
+                toCol: nc,
+                toRow: nr,
+                isCapture: true,
+                isMutual: false,
+                isSuicide: true,
+                isEndgamePairWin: false,
+                capturedPiece: target
+              });
+            }
+          }
+        }
+        return moves;
+      }
+
+      function getAllLegalActions(board, side) {
+        const actions = [];
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            const cell = board[r][c];
+            if (!cell) continue;
+            if (!cell.revealed) {
+              actions.push({ type: 'flip', col: c, row: r });
+            } else if (side && cell.side === side) {
+              const moves = getLegalMovesForPiece(board, cell);
+              for (const m of moves) {
+                actions.push(m);
+              }
+            }
+          }
+        }
+        return actions;
+      }
+
+      // ==========================================
+      // 4. GRANDMASTER AI ENGINE (Minimax + Alpha-Beta + Card Counting + Tactical Sacrifice)
+      // ==========================================
+      const BASE_RANK_VALS = {
+        8: 980,
+        7: 820,
+        6: 640,
+        5: 470,
+        4: 350,
+        3: 250,
+        2: 190,
+        1: 520
+      };
+
+      // Dynamic piece valuation considering remaining predators on the board
+      function getDynamicPieceValue(piece, myPieces, enemyPieces) {
+        let v = BASE_RANK_VALS[piece.rank];
+        const enemyHasElephant = enemyPieces.some(p => p.rank === 8);
+        const enemyHasRat = enemyPieces.some(p => p.rank === 1);
+
+        if (piece.rank === 1) {
+          // Rat is super valuable if enemy Elephant is alive, otherwise weak
+          v = enemyHasElephant ? 560 : 140;
+        } else if (piece.rank === 8) {
+          // Elephant is nearly unstoppable if enemy Rat is dead!
+          v = enemyHasRat ? 960 : 1380;
+        }
+
+        // Check if this piece has ANY living predator on the enemy team
+        let hasPredator = false;
+        for (const ep of enemyPieces) {
+          if (piece.rank === 8 && ep.rank === 1) { hasPredator = true; break; }
+          if (!(piece.rank === 1 && ep.rank === 8) && ep.rank > piece.rank) { hasPredator = true; break; }
+        }
+        if (!hasPredator && piece.rank >= 5) {
+          v += 320; // Unstoppable apex predator bonus!
+        }
+        return v;
+      }
+
+      function isPieceThreatenedAt(board, side, rank, col, row) {
+        const { redPieces, bluePieces } = countRemainingPieces(board);
+        const is1v1 = redPieces.length === 1 && bluePieces.length === 1;
+        const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+        for (const [dc, dr] of dirs) {
+          const nc = col + dc;
+          const nr = row + dr;
+          if (nc < 0 || nc >= COLS || nr < 0 || nr >= ROWS) continue;
+          const neighbor = board[nr][nc];
+          if (neighbor && neighbor.revealed && neighbor.side !== side) {
+            const out = getAttackOutcome(board, neighbor, { side, rank, revealed: true });
+            if (out === 'win' || out === 'endgame_pair_win' || (is1v1 && neighbor.rank === rank)) {
+              return true;
+            }
+          }
+        }
+        return false;
+      }
+
+      // BFS shortest path distance on the 4x4 grid from mover to target cell, avoiding obstacles and fatal squares
+      function getShortestSafePathDist(board, mover, targetCol, targetRow) {
+        const visited = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+        const queue = [{ c: mover.col, r: mover.row, d: 0 }];
+        visited[mover.row][mover.col] = true;
+        const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+
+        while (queue.length > 0) {
+          const { c, r, d } = queue.shift();
+          if (c === targetCol && r === targetRow) return d;
+
+          for (const [dc, dr] of dirs) {
+            const nc = c + dc;
+            const nr = r + dr;
+            if (nc < 0 || nc >= COLS || nr < 0 || nr >= ROWS || visited[nr][nc]) continue;
+
+            if (nc === targetCol && nr === targetRow) {
+              return d + 1;
+            }
+
+            const cell = board[nr][nc];
+            // Can pass through empty cells
+            if (!cell) {
+              visited[nr][nc] = true;
+              queue.push({ c: nc, r: nr, d: d + 1 });
+            }
+          }
+        }
+        return 99;
+      }
+
+      // Simulate a move on a cloned board for Minimax search
+      function simulateMoveOnBoard(board, move) {
+        const nextB = cloneBoard(board);
+        const mover = nextB[move.fromRow][move.fromCol];
+        nextB[move.fromRow][move.fromCol] = null;
+
+        if (move.isSuicide) {
+          // Attacker perishes, defender remains untouched!
+          return nextB;
+        }
+        if (move.isMutual) {
+          // Both perish!
+          nextB[move.toRow][move.toCol] = null;
+          return nextB;
+        }
+        mover.col = move.toCol;
+        mover.row = move.toRow;
+        nextB[move.toRow][move.toCol] = mover;
+        return nextB;
+      }
+
+      // Evaluate a board state from `perspectiveSide`'s point of view (`turnSide` is about to move)
+      function evaluateBoardState(board, perspectiveSide, turnSide) {
+        const enemySide = perspectiveSide === SIDE_RED ? SIDE_BLUE : SIDE_RED;
+        const { redPieces, bluePieces } = countRemainingPieces(board);
+        const myPieces = perspectiveSide === SIDE_RED ? redPieces : bluePieces;
+        const oppPieces = perspectiveSide === SIDE_RED ? bluePieces : redPieces;
+
+        // Terminal checks
+        if (myPieces.length === 0 && oppPieces.length === 0) return 0;
+        if (oppPieces.length === 0) return 95000;
+        if (myPieces.length === 0) return -95000;
+
+        // Rule 2 & Rule 3 1v1 Endgame exact evaluation
+        if (myPieces.length === 1 && oppPieces.length === 1) {
+          const mp = myPieces[0];
+          const op = oppPieces[0];
+          if (mp.revealed && op.revealed) {
+            if (mp.rank !== op.rank) {
+              const winS = compareDifferentPieceRanks(mp, op);
+              return winS === perspectiveSide ? 92000 : -92000;
+            } else {
+              // 1v1 Equal Rank! Check Manhattan distance & whose turn it is
+              const dist = Math.abs(mp.col - op.col) + Math.abs(mp.row - op.row);
+              if (dist === 1) {
+                return turnSide === perspectiveSide ? 90000 : -90000;
+              }
+              // Odd distance on turnSide's turn gives turnSide parity advantage
+              const parityOwner = (dist % 2 === 1) ? turnSide : (turnSide === SIDE_RED ? SIDE_BLUE : SIDE_RED);
+              return parityOwner === perspectiveSide ? (1500 - dist * 120) : (-1500 + dist * 120);
+            }
+          }
+        }
+
+        let score = 0;
+
+        // Material + Revealed control + Threat & Chase incentives
+        for (const mp of myPieces) {
+          const val = getDynamicPieceValue(mp, myPieces, oppPieces);
+          score += val;
+          if (mp.revealed) {
+            score += 35; // Slight bonus for active mobility
+            const threatened = isPieceThreatenedAt(board, perspectiveSide, mp.rank, mp.col, mp.row);
+            if (threatened) {
+              // If it's enemy's turn and our piece is adjacent to a predator, huge penalty!
+              score -= (turnSide !== perspectiveSide) ? val * 0.92 : val * 0.35;
+            }
+            // Chase weaker revealed enemy pieces
+            for (const op of oppPieces) {
+              if (!op.revealed) continue;
+              const out = getAttackOutcome(board, mp, op);
+              if (out === 'win') {
+                const oppVal = getDynamicPieceValue(op, oppPieces, myPieces);
+                const pathDist = getShortestSafePathDist(board, mp, op.col, op.row);
+                const manhattan = Math.abs(mp.col - op.col) + Math.abs(mp.row - op.row);
+                const effDist = pathDist < 99 ? pathDist : manhattan + 2;
+                score += Math.max(0, (8 - effDist)) * (oppVal * 0.055);
+              }
+            }
+          }
+        }
+
+        for (const op of oppPieces) {
+          const val = getDynamicPieceValue(op, oppPieces, myPieces);
+          score -= val;
+          if (op.revealed) {
+            score -= 35;
+            const threatened = isPieceThreatenedAt(board, enemySide, op.rank, op.col, op.row);
+            if (threatened) {
+              score += (turnSide === perspectiveSide) ? val * 0.92 : val * 0.35;
+            }
+            for (const mp of myPieces) {
+              if (!mp.revealed) continue;
+              const out = getAttackOutcome(board, op, mp);
+              if (out === 'win') {
+                const myVal = getDynamicPieceValue(mp, myPieces, oppPieces);
+                const pathDist = getShortestSafePathDist(board, op, mp.col, mp.row);
+                const manhattan = Math.abs(op.col - mp.col) + Math.abs(op.row - mp.row);
+                const effDist = pathDist < 99 ? pathDist : manhattan + 2;
+                score -= Math.max(0, (8 - effDist)) * (myVal * 0.055);
+              }
+            }
+          }
+        }
+
+        // Piece count advantage bonus
+        score += (myPieces.length - oppPieces.length) * 160;
+        return score;
+      }
+
+      // Evaluate a Flip action using legitimate Card Counting (counting all unrevealed pieces without peeking at coordinates)
+      function evaluateFlipAction(board, act, side) {
+        if (!side) {
+          // Very first flip of the game: prefer center or balanced squares
+          const centerBonus = (act.col === 1 || act.col === 2) && (act.row === 1 || act.row === 2) ? 25 : 10;
+          return 300 + centerBonus;
+        }
+
+        const enemySide = side === SIDE_RED ? SIDE_BLUE : SIDE_RED;
+        // Count unrevealed pieces in the deck
+        const unrevealed = [];
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            const p = board[r][c];
+            if (p && !p.revealed) {
+              unrevealed.push({ side: p.side, rank: p.rank });
+            }
+          }
+        }
+        if (unrevealed.length === 0) return -9999;
+
+        // Inspect revealed neighbors of the flip candidate square (act.col, act.row)
+        const friendlyNeighbors = [];
+        const enemyNeighbors = [];
+        const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+        for (const [dc, dr] of dirs) {
+          const nc = act.col + dc;
+          const nr = act.row + dr;
+          if (nc >= 0 && nc < COLS && nr >= 0 && nr < ROWS) {
+            const nb = board[nr][nc];
+            if (nb && nb.revealed) {
+              if (nb.side === side) friendlyNeighbors.push(nb);
+              else enemyNeighbors.push(nb);
+            }
+          }
+        }
+
+        // Compute expected value over the unrevealed pool (remember: after we flip, it is the ENEMY's turn!)
+        let totalEv = 0;
+        for (const cand of unrevealed) {
+          let ev = 0;
+          if (cand.side === side) {
+            // If we flip our own piece: can any adjacent enemy piece immediately eat it on their turn?
+            let eatenByEnemy = false;
+            for (const en of enemyNeighbors) {
+              const out = getAttackOutcome(board, en, { side: cand.side, rank: cand.rank, revealed: true });
+              if (out === 'win' || out === 'endgame_pair_win') {
+                eatenByEnemy = true;
+                break;
+              }
+            }
+            if (eatenByEnemy) {
+              ev -= BASE_RANK_VALS[cand.rank] * 1.15;
+            } else {
+              ev += BASE_RANK_VALS[cand.rank] * 0.28;
+            }
+          } else {
+            // If we flip an enemy piece: on the enemy's turn, can this newly flipped enemy piece immediately eat our adjacent friendly piece?
+            let eatsOurNeighbor = false;
+            let eatenOurRank = 0;
+            for (const fn of friendlyNeighbors) {
+              const out = getAttackOutcome(board, { side: enemySide, rank: cand.rank, revealed: true }, fn);
+              if (out === 'win' || out === 'endgame_pair_win') {
+                eatsOurNeighbor = true;
+                eatenOurRank = Math.max(eatenOurRank, fn.rank);
+              }
+            }
+            if (eatsOurNeighbor) {
+              ev -= BASE_RANK_VALS[eatenOurRank] * 0.95;
+            } else if (friendlyNeighbors.some(fn => getAttackOutcome(board, fn, { side: enemySide, rank: cand.rank, revealed: true }) === 'win')) {
+              // Our adjacent friendly piece dominates the newly flipped enemy piece!
+              ev += BASE_RANK_VALS[cand.rank] * 0.35;
+            } else {
+              ev -= 20;
+            }
+          }
+          totalEv += ev;
+        }
+
+        const avgEv = totalEv / unrevealed.length;
+        // Base desire to flip when we have few revealed movable pieces
+        let myRevealedCount = 0;
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            const p = board[r][c];
+            if (p && p.revealed && p.side === side) myRevealedCount++;
+          }
+        }
+        const developBonus = myRevealedCount === 0 ? 380 : (myRevealedCount === 1 ? 140 : 40);
+        return developBonus + avgEv;
+      }
+
+      // Alpha-Beta Minimax over deterministic board moves
+      function minimaxMoveSearch(board, depth, alpha, beta, maximizingPlayer, aiSide, currentTurnSide) {
+        const evalNow = evaluateBoardState(board, aiSide, currentTurnSide);
+        if (depth === 0 || Math.abs(evalNow) > 85000) {
+          return evalNow;
+        }
+
+        // Gather all revealed-piece moves for currentTurnSide
+        const moves = [];
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            const p = board[r][c];
+            if (p && p.revealed && p.side === currentTurnSide) {
+              const ms = getLegalMovesForPiece(board, p);
+              for (const m of ms) moves.push(m);
+            }
+          }
+        }
+
+        if (moves.length === 0) {
+          return evalNow;
+        }
+
+        // Order moves for faster alpha-beta pruning
+        moves.sort((a, b) => {
+          const sa = (a.isEndgamePairWin ? 9000 : 0) + (a.isCapture && !a.isSuicide ? 600 : 0) - (a.isSuicide ? 400 : 0);
+          const sb = (b.isEndgamePairWin ? 9000 : 0) + (b.isCapture && !b.isSuicide ? 600 : 0) - (b.isSuicide ? 400 : 0);
+          return sb - sa;
+        });
+
+        const nextSide = currentTurnSide === SIDE_RED ? SIDE_BLUE : SIDE_RED;
+
+        if (maximizingPlayer) {
+          let maxEval = -Infinity;
+          for (const m of moves) {
+            if (m.isEndgamePairWin) return 93000 + depth * 100;
+            const nextB = simulateMoveOnBoard(board, m);
+            const ev = minimaxMoveSearch(nextB, depth - 1, alpha, beta, false, aiSide, nextSide);
+            if (ev > maxEval) maxEval = ev;
+            if (ev > alpha) alpha = ev;
+            if (beta <= alpha) break;
+          }
+          return maxEval;
+        } else {
+          let minEval = Infinity;
+          for (const m of moves) {
+            if (m.isEndgamePairWin) return -93000 - depth * 100;
+            const nextB = simulateMoveOnBoard(board, m);
+            const ev = minimaxMoveSearch(nextB, depth - 1, alpha, beta, true, aiSide, nextSide);
+            if (ev < minEval) minEval = ev;
+            if (ev < beta) beta = ev;
+            if (beta <= alpha) break;
+          }
+          return minEval;
+        }
+      }
+
+      function computeBestAction(board, side, difficulty) {
+        const actions = getAllLegalActions(board, side);
+        if (actions.length === 0) return null;
+
+        // If side is not determined yet (first flip), pick a central flip
+        if (!side) {
+          return actions[Math.floor(Math.random() * actions.length)];
+        }
+
+        const currentBaseScore = evaluateBoardState(board, side, side);
+        const enemySide = side === SIDE_RED ? SIDE_BLUE : SIDE_RED;
+        const searchDepth = difficulty === 1 ? 1 : (difficulty === 2 ? 3 : 4);
+
+        const scored = [];
+        for (const act of actions) {
+          let actionScore = 0;
+
+          if (act.type === 'move') {
+            // 1. Immediate 1v1 active pair win!
+            if (act.isEndgamePairWin) {
+              return act;
+            }
+
+            // 2. Simulate move & run Minimax lookahead!
+            const nextB = simulateMoveOnBoard(board, act);
+            const futureEval = minimaxMoveSearch(
+              nextB,
+              searchDepth - 1,
+              -Infinity,
+              Infinity,
+              false,
+              side,
+              enemySide
+            );
+            actionScore = futureEval - currentBaseScore;
+
+            // Extra tactical guardrails for suicide moves:
+            // Only suicide if it triggers a winning 1v1 endgame (where futureEval > 80000) or saves a much higher piece!
+            if (act.isSuicide && futureEval < 75000) {
+              actionScore -= 4500;
+            }
+          } else if (act.type === 'flip') {
+            actionScore = evaluateFlipAction(board, act, side);
+          }
+
+          const noise = difficulty === 1
+            ? (Math.random() * 260 - 130)
+            : (difficulty === 2 ? (Math.random() * 28 - 14) : (Math.random() * 4 - 2));
+
+          scored.push({ act, score: actionScore + noise });
+        }
+
+        scored.sort((a, b) => b.score - a.score);
+        return scored[0].act;
+      }
+
+      // ==========================================
+      // 5. ACTION EXECUTION & ENDGAME RULES
+      // ==========================================
+      function spawnParticles(col, row, colorHex, count = 18) {
+        for (let i = 0; i < count; i++) {
+          const angle = (Math.PI * 2 * i) / count + Math.random() * 0.4;
+          const speed = 1.5 + Math.random() * 3.5;
+          state.particles.push({
+            col,
+            row,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            radius: 3.5 + Math.random() * 4,
+            alpha: 1,
+            color: colorHex
+          });
+        }
+      }
+
+      function performAction(action) {
+        if (state.gameOver) return;
+
+        state.history.push({
+          board: cloneBoard(state.board),
+          turnRole: state.turnRole,
+          selfSide: state.selfSide,
+          oppSide: state.oppSide,
+          equal1v1Steps: state.equal1v1Steps,
+          lastMove: state.lastMove ? { ...state.lastMove } : null,
+          moveLog: [...state.moveLog]
+        });
+
+        const actorRole = state.turnRole;
+        let endedByDirectPairWin = false;
+
+        state.selected = null;
+        state.legalMoves = [];
+        state.hintMove = null;
+
+        if (action.type === 'flip') {
+          const card = state.board[action.row][action.col];
+          card.revealed = true;
+          state.cursor = { col: action.col, row: action.row };
+
+          // RULE 1: 自己第一次翻牌的颜色为本局自己颜色
+          let firstFlipNotice = '';
+          if (state.selfSide === null) {
+            if (actorRole === ROLE_SELF) {
+              state.selfSide = card.side;
+              state.oppSide = card.side === SIDE_RED ? SIDE_BLUE : SIDE_RED;
+            } else {
+              state.oppSide = card.side;
+              state.selfSide = card.side === SIDE_RED ? SIDE_BLUE : SIDE_RED;
+            }
+            const myColorText = state.selfSide === SIDE_RED ? '红方' : '蓝方';
+            firstFlipNotice = `（本局您是【${myColorText}】）`;
+          }
+
+          const actorSide = actorRole === ROLE_SELF ? state.selfSide : state.oppSide;
+          const roleText = actorRole === ROLE_SELF ? '自己' : '对手';
+
+          state.flipAnim = {
+            col: action.col,
+            row: action.row,
+            startTime: performance.now(),
+            duration: 280
+          };
+
+          state.lastMove = {
+            type: 'flip',
+            side: card.side,
+            fromCol: action.col,
+            fromRow: action.row,
+            toCol: action.col,
+            toRow: action.row
+          };
+
+          const cardOwnerText = card.side === SIDE_RED ? '红' : '蓝';
+          const info = ANIMALS[card.rank];
+          sound.flip();
+          spawnParticles(action.col, action.row, card.side === SIDE_RED ? '#fb7185' : '#38bdf8', 14);
+          showToast(`🃏 ${roleText}翻出了【${cardOwnerText}${info.name}】${firstFlipNotice}！`);
+
+          state.moveLog.push({
+            step: state.moveLog.length + 1,
+            side: actorSide,
+            text: `${roleText}翻牌 ${coordLabel(action.col, action.row)} → ${cardOwnerText}${info.emoji}${info.name}${firstFlipNotice ? ' [定色]' : ''}`
+          });
+
+          updateInspector(card);
+        } else if (action.type === 'move') {
+          const actorSide = getActiveSide();
+          const roleText = actorRole === ROLE_SELF ? '自己' : '对手';
+          const movingPiece = state.board[action.fromRow][action.fromCol];
+          const targetPiece = state.board[action.toRow][action.toCol];
+          const info = ANIMALS[movingPiece.rank];
+
+          state.slideAnim = {
+            piece: { ...movingPiece },
+            fromCol: action.fromCol,
+            fromRow: action.fromRow,
+            toCol: action.toCol,
+            toRow: action.toRow,
+            startTime: performance.now(),
+            duration: 210
+          };
+
+          state.board[action.fromRow][action.fromCol] = null;
+          state.cursor = { col: action.toCol, row: action.toRow };
+
+          if (action.isEndgamePairWin && targetPiece) {
+            // RULE 2: 最后各剩一张牌时如相同，谁能主动对子，谁胜！
+            movingPiece.col = action.toCol;
+            movingPiece.row = action.toRow;
+            state.board[action.toRow][action.toCol] = movingPiece;
+
+            sound.capture();
+            spawnParticles(action.toCol, action.toRow, '#facc15', 30);
+            showToast(`🏆 ${roleText}【${info.name}】主动对子成功，一击决胜！`);
+            state.moveLog.push({
+              step: state.moveLog.length + 1,
+              side: actorSide,
+              text: `${roleText}${info.emoji}${info.name} ${coordLabel(action.fromCol, action.fromRow)}→${coordLabel(action.toCol, action.toRow)} 主动对子获胜！`
+            });
+            updateInspector(movingPiece);
+            endedByDirectPairWin = true;
+            declareVictory(
+              actorSide,
+              `最后各剩一张同级【${info.emoji}${info.name}】，${roleText}主动发起对子，直接获胜！`
+            );
+          } else if (action.isSuicide && targetPiece) {
+            // NEW RULE: 当弱者一方碰到强者时，采取自杀的形式自己灭亡（强者留在原位）！
+            const targetInfo = ANIMALS[targetPiece.rank];
+            sound.mutual();
+            spawnParticles(action.toCol, action.toRow, '#a855f7', 22);
+            showToast(`💀 ${roleText}【${info.name}】撞向强者【${targetInfo.name}】自杀灭亡！`);
+            state.moveLog.push({
+              step: state.moveLog.length + 1,
+              side: actorSide,
+              text: `${roleText}${info.emoji}${info.name} ${coordLabel(action.fromCol, action.fromRow)}→${coordLabel(action.toCol, action.toRow)} 撞${targetInfo.emoji}${targetInfo.name} 自杀灭亡`
+            });
+            updateInspector(targetPiece);
+          } else if (action.isMutual && targetPiece) {
+            state.board[action.toRow][action.toCol] = null;
+            sound.mutual();
+            spawnParticles(action.toCol, action.toRow, '#facc15', 28);
+            showToast(`💥 同级相撞！双方【${info.name}】同归于尽！`);
+            state.moveLog.push({
+              step: state.moveLog.length + 1,
+              side: actorSide,
+              text: `${roleText}${info.emoji}${info.name} ${coordLabel(action.fromCol, action.fromRow)}×${coordLabel(action.toCol, action.toRow)} 同归于尽`
+            });
+            updateInspector(null);
+          } else {
+            movingPiece.col = action.toCol;
+            movingPiece.row = action.toRow;
+            state.board[action.toRow][action.toCol] = movingPiece;
+
+            if (targetPiece) {
+              const targetInfo = ANIMALS[targetPiece.rank];
+              sound.capture();
+              spawnParticles(action.toCol, action.toRow, movingPiece.side === SIDE_RED ? '#f43f5e' : '#38bdf8', 24);
+              showToast(`⚔️ ${roleText}【${info.name}】吃掉了【${targetInfo.name}】！`);
+              state.moveLog.push({
+                step: state.moveLog.length + 1,
+                side: actorSide,
+                text: `${roleText}${info.emoji}${info.name} ${coordLabel(action.fromCol, action.fromRow)}→${coordLabel(action.toCol, action.toRow)} 吃 ${targetInfo.emoji}${targetInfo.name}`
+              });
+            } else {
+              sound.move();
+              state.moveLog.push({
+                step: state.moveLog.length + 1,
+                side: actorSide,
+                text: `${roleText}${info.emoji}${info.name} ${coordLabel(action.fromCol, action.fromRow)} → ${coordLabel(action.toCol, action.toRow)}`
+              });
+            }
+            updateInspector(movingPiece);
+          }
+
+          state.lastMove = {
+            type: 'move',
+            side: actorSide,
+            fromCol: action.fromCol,
+            fromRow: action.fromRow,
+            toCol: action.toCol,
+            toRow: action.toRow
+          };
+        }
+
+        if (!endedByDirectPairWin) {
+          const nextRole = state.turnRole === ROLE_SELF ? ROLE_OPP : ROLE_SELF;
+          checkGameEnd(nextRole);
+        }
+
+        if (!state.gameOver) {
+          state.turnRole = state.turnRole === ROLE_SELF ? ROLE_OPP : ROLE_SELF;
+          startTurnTimer();
+          updateUI();
+
+          if (state.mode === 'pve' && state.turnRole === ROLE_OPP) {
+            state.aiThinking = true;
+            updateUI();
+            state.aiTimer = setTimeout(() => {
+              const aiAct = computeBestAction(state.board, state.oppSide, state.aiDifficulty);
+              state.aiThinking = false;
+              if (aiAct) {
+                performAction(aiAct);
+              } else {
+                declareVictory(state.selfSide, '对手已无棋可走，自己获胜！');
+              }
+            }, 520);
+          }
+        } else {
+          updateUI();
+        }
+      }
+
+      function checkGameEnd(nextTurnRole) {
+        const { redPieces, bluePieces } = countRemainingPieces(state.board);
+        const redCount = redPieces.length;
+        const blueCount = bluePieces.length;
+
+        if (redCount === 0 && blueCount === 0) {
+          declareVictory('draw', '双方猛兽全部同归于尽，本局和棋！');
+          return;
+        }
+        if (blueCount === 0) {
+          const winRoleText = getRoleForSide(SIDE_RED) === ROLE_SELF ? '自己（红方）' : '对手（红方）';
+          declareVictory(SIDE_RED, `${winRoleText}消灭了蓝方全部猛兽，大获全胜！`);
+          return;
+        }
+        if (redCount === 0) {
+          const winRoleText = getRoleForSide(SIDE_BLUE) === ROLE_SELF ? '自己（蓝方）' : '对手（蓝方）';
+          declareVictory(SIDE_BLUE, `${winRoleText}消灭了红方全部猛兽，大获全胜！`);
+          return;
+        }
+
+        // SPECIAL 1v1 ENDGAME ADJUDICATION (Rule 2 & Rule 3)
+        if (redCount === 1 && blueCount === 1) {
+          const rPiece = redPieces[0];
+          const bPiece = bluePieces[0];
+
+          if (rPiece.revealed && bPiece.revealed) {
+            if (rPiece.rank !== bPiece.rank) {
+              // RULE 3: 最后各剩一张牌时，谁大则直接谁胜，无需再走牌！
+              const winningSide = compareDifferentPieceRanks(rPiece, bPiece);
+              const winPiece = winningSide === SIDE_RED ? rPiece : bPiece;
+              const losePiece = winningSide === SIDE_RED ? bPiece : rPiece;
+              const winInfo = ANIMALS[winPiece.rank];
+              const loseInfo = ANIMALS[losePiece.rank];
+              const winRoleName = getRoleForSide(winningSide) === ROLE_SELF ? '自己' : '对手';
+              const winColorName = winningSide === SIDE_RED ? '红方' : '蓝方';
+
+              spawnParticles(winPiece.col, winPiece.row, '#facc15', 26);
+              declareVictory(
+                winningSide,
+                `最后各剩一张牌：${winRoleName}（${winColorName}）【${winInfo.emoji}${winInfo.name}】压制【${loseInfo.emoji}${loseInfo.name}】，无需再走牌，直接获胜！`
+              );
+              return;
+            }
+
+            // RULE 2: 最后各剩一张牌时如相同，谁能主动对子，谁胜，否则和棋！
+            const dist = Math.abs(rPiece.col - bPiece.col) + Math.abs(rPiece.row - bPiece.row);
+            const sameInfo = ANIMALS[rPiece.rank];
+            state.equal1v1Steps++;
+
+            if (dist === 1) {
+              const nextName = nextTurnRole === ROLE_SELF ? '自己' : '对手';
+              showToast(`⚡ 最后同级【${sameInfo.name}】相邻！轮到${nextName}主动对子决胜！`);
+              return;
+            }
+
+            if (state.equal1v1Steps >= MAX_1V1_EQUAL_STEPS) {
+              declareVictory(
+                'draw',
+                `最后各剩一张同级【${sameInfo.emoji}${sameInfo.name}】，双方均无法完成主动对子，本局判为和棋！`
+              );
+              return;
+            } else {
+              const remain = MAX_1V1_EQUAL_STEPS - state.equal1v1Steps;
+              showToast(`⚡ 同级【${sameInfo.name}】残局：主动对子者胜（${remain}步内未对子判和）`);
+            }
+          }
+        } else {
+          state.equal1v1Steps = 0;
+        }
+
+        const nextSide = nextTurnRole === ROLE_SELF ? state.selfSide : state.oppSide;
+        const nextActions = getAllLegalActions(state.board, nextSide);
+        if (nextActions.length === 0) {
+          const winnerSide = nextSide === SIDE_RED ? SIDE_BLUE : SIDE_RED;
+          declareVictory(winnerSide, '对方已无任何可走步数，直接获胜！');
+        }
+      }
+
+      function declareVictory(winnerSide, reason) {
+        state.gameOver = true;
+        state.winnerSide = winnerSide;
+        state.winnerRole = winnerSide === 'draw' ? 'draw' : getRoleForSide(winnerSide);
+        state.winReason = reason;
+        if (state.turnInterval) clearInterval(state.turnInterval);
+        sound.win();
+
+        let redLeft = 0, blueLeft = 0;
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            const p = state.board[r][c];
+            if (p) {
+              if (p.side === SIDE_RED) redLeft++;
+              else blueLeft++;
+            }
+          }
+        }
+
+        const emojiEl = document.getElementById('victoryEmoji');
+        const titleEl = document.getElementById('victoryTitle');
+        if (winnerSide === 'draw') {
+          emojiEl.textContent = '🤝';
+          titleEl.textContent = '旗鼓相当 · 和棋！';
+        } else {
+          const colorName = winnerSide === SIDE_RED ? '红方' : '蓝方';
+          if (state.winnerRole === ROLE_SELF) {
+            emojiEl.textContent = '🏆';
+            titleEl.textContent = `自己（${colorName}）获胜！`;
+          } else {
+            emojiEl.textContent = state.mode === 'pve' ? '🤖' : '👑';
+            titleEl.textContent = `对手（${colorName}）获胜！`;
+          }
+        }
+
+        document.getElementById('victoryReason').textContent = reason;
+        document.getElementById('statTotalMoves').textContent = `${state.moveLog.length} 步`;
+        document.getElementById('statRedLeft').textContent = `${redLeft} 只`;
+        document.getElementById('statBlueLeft').textContent = `${blueLeft} 只`;
+
+        setTimeout(() => {
+          document.getElementById('victoryModal').classList.remove('hidden');
+        }, 480);
+      }
+
+      // ==========================================
+      // 6. USER INTERACTION
+      // ==========================================
+      function handleCellAction(col, row) {
+        if (state.gameOver || state.aiThinking) return;
+        if (state.mode === 'pve' && state.turnRole === ROLE_OPP) return;
+
+        state.cursor = { col, row };
+        updateCursorBadge();
+
+        if (state.selected) {
+          const chosenMove = state.legalMoves.find(m => m.toCol === col && m.toRow === row);
+          if (chosenMove) {
+            performAction(chosenMove);
+            return;
+          }
+        }
+
+        const cellPiece = state.board[row][col];
+
+        if (cellPiece && !cellPiece.revealed) {
+          performAction({ type: 'flip', col, row });
+          return;
+        }
+
+        if (cellPiece && cellPiece.revealed) {
+          updateInspector(cellPiece);
+          const activeSide = getActiveSide();
+
+          if (activeSide && cellPiece.side === activeSide) {
+            if (state.selected && state.selected.col === col && state.selected.row === row) {
+              state.selected = null;
+              state.legalMoves = [];
+            } else {
+              sound.select();
+              state.selected = { col, row };
+              state.legalMoves = getLegalMovesForPiece(state.board, cellPiece);
+              state.hintMove = null;
+            }
+            return;
+          } else {
+            if (state.selected) {
+              sound.invalid();
+              showToast('⚠️ 等级不足以吃掉该敌方棋子，或不在相邻格！');
+            } else {
+              const myColorName = activeSide === SIDE_RED ? '红方' : '蓝方';
+              showToast(`ℹ️ 本局您的颜色为【${myColorName}】，请选择${myColorName}萌宠或翻牌`);
+            }
+            state.selected = null;
+            state.legalMoves = [];
+            return;
+          }
+        }
+
+        state.selected = null;
+        state.legalMoves = [];
+        updateInspector(null);
+      }
+
+      function moveCursor(dc, dr) {
+        const mult = state.flipped ? -1 : 1;
+        const nextCol = Math.max(0, Math.min(COLS - 1, state.cursor.col + dc * mult));
+        const nextRow = Math.max(0, Math.min(ROWS - 1, state.cursor.row + dr * mult));
+        state.cursor = { col: nextCol, row: nextRow };
+        updateCursorBadge();
+        const p = state.board[nextRow][nextCol];
+        if (p && p.revealed) updateInspector(p);
+      }
+
+      function updateCursorBadge() {
+        const badge = document.getElementById('cursorCoordBadge');
+        if (badge) {
+          badge.textContent = coordLabel(state.cursor.col, state.cursor.row);
+        }
+      }
+
+      // ==========================================
+      // 7. UI UPDATES, CHAIN BAR & INSPECTOR
+      // ==========================================
+      let toastTimer = null;
+      function showToast(msg) {
+        const el = document.getElementById('boardToast');
+        if (!el) return;
+        el.textContent = msg;
+        el.classList.remove('opacity-0');
+        el.classList.add('opacity-100');
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+          el.classList.remove('opacity-100');
+          el.classList.add('opacity-0');
+        }, 2500);
+      }
+
+      function renderChainBarAndStrip() {
+        const chainOrder = [8, 7, 6, 5, 4, 3, 2, 1, 8];
+        const chainEl = document.getElementById('pkChainBar');
+        if (chainEl) {
+          chainEl.innerHTML = chainOrder.map((rk, i) => {
+            const a = ANIMALS[rk];
+            const arrow = i < chainOrder.length - 1
+              ? '<span class="text-yellow-300 font-black text-xs sm:text-sm mx-0.5 select-none drop-shadow">&gt;</span>'
+              : '';
+            return `
+              <div class="flex items-center">
+                <div class="flex flex-col items-center px-0.5" title="${a.title} (${a.name})">
+                  <span class="text-base sm:text-lg leading-none drop-shadow">${a.emoji}</span>
+                  <span class="text-[9px] font-bold text-lime-100 leading-tight">${a.name}</span>
+                </div>
+                ${arrow}
+              </div>
+            `;
+          }).join('');
+        }
+
+        const strip = document.getElementById('rankStrip');
+        if (strip) {
+          let html = '';
+          for (let r = 8; r >= 1; r--) {
+            const a = ANIMALS[r];
+            html += `
+              <div class="p-1.5 rounded-lg bg-slate-900/75 border border-slate-800 flex flex-col items-center">
+                <span class="text-base leading-none">${a.emoji}</span>
+                <span class="text-[11px] font-semibold text-slate-200 mt-1">${r}${a.name}</span>
+              </div>
+            `;
+          }
+          strip.innerHTML = html;
+        }
+      }
+
+      function updateInspector(piece) {
+        const container = document.getElementById('inspectorContent');
+        const pill = document.getElementById('selectedRankPill');
+        if (!piece || !piece.revealed) {
+          pill.textContent = '未选中';
+          pill.className = 'text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400';
+          container.innerHTML = `
+            <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-800 text-center text-slate-400">
+              点击任意已翻开的萌宠方块，即可查看它的战力等级、可捕食目标与天敌关系。
+            </div>
+          `;
+          return;
+        }
+
+        const info = ANIMALS[piece.rank];
+        const isRed = piece.side === SIDE_RED;
+        const ownerRole = getRoleForSide(piece.side);
+        const ownerText = ownerRole === ROLE_SELF ? '自己' : (ownerRole === ROLE_OPP ? '对手' : '');
+        pill.textContent = `${isRed ? '红方' : '蓝方'}${ownerText ? `(${ownerText})` : ''} · Lv.${piece.rank}`;
+        pill.className = `text-[11px] px-2 py-0.5 rounded-full font-bold ${
+          isRed ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' : 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
+        }`;
+
+        const prey = [];
+        const predators = [];
+        for (let r = 8; r >= 1; r--) {
+          if (r === piece.rank) continue;
+          if (piece.rank === 1 && r === 8) {
+            prey.push(`${ANIMALS[8].emoji}${ANIMALS[8].name}`);
+          } else if (piece.rank === 8 && r === 1) {
+            predators.push(`${ANIMALS[1].emoji}${ANIMALS[1].name}`);
+          } else if (piece.rank > r) {
+            prey.push(`${ANIMALS[r].emoji}${ANIMALS[r].name}`);
+          } else {
+            predators.push(`${ANIMALS[r].emoji}${ANIMALS[r].name}`);
+          }
+        }
+
+        const { redPieces, bluePieces } = countRemainingPieces(state.board);
+        const is1v1 = redPieces.length === 1 && bluePieces.length === 1;
+        const sameText = is1v1
+          ? `最后1对1残局：主动撞击敌方【${info.emoji}${info.name}】直接获胜！`
+          : (state.sameRankRule === 'mutual'
+              ? `常规与敌方【${info.emoji}${info.name}】相撞同归于尽（最后1对1时主动对子胜）`
+              : `主动撞击敌方【${info.emoji}${info.name}】可将其吃掉`);
+
+        container.innerHTML = `
+          <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center gap-3">
+            <div class="w-11 h-11 rounded-xl flex items-center justify-center text-2xl ${
+              isRed ? 'bg-rose-500/20 border border-rose-500/40' : 'bg-sky-500/20 border border-sky-500/40'
+            }">
+              ${info.emoji}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5">
+                <span class="font-bold text-sm text-white">${info.title} (${info.name})</span>
+                <span class="text-[11px] text-amber-300 font-mono">位置 ${coordLabel(piece.col, piece.row)}</span>
+              </div>
+              <p class="text-[11px] text-slate-400 mt-0.5 leading-snug">${info.skill}</p>
+            </div>
+          </div>
+          <div class="px-2.5 py-1.5 rounded-lg bg-amber-500/15 border border-amber-400/30 text-amber-200 text-[11px] font-medium">
+            💥 同级规则：${sameText}
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-[11px]">
+            <div class="p-2 rounded-lg bg-emerald-950/40 border border-emerald-500/25">
+              <div class="text-emerald-300 font-semibold mb-0.5">✅ 可稳吃：</div>
+              <div class="text-slate-200 leading-relaxed">${prey.length ? prey.join(' ') : '仅克大象'}</div>
+            </div>
+            <div class="p-2 rounded-lg bg-rose-950/40 border border-rose-500/25">
+              <div class="text-rose-300 font-semibold mb-0.5">💀 天敌 (撞上即自杀)：</div>
+              <div class="text-slate-200 leading-relaxed">${predators.join(' ')}</div>
+            </div>
+          </div>
+        `;
+      }
+
+      function updateUI() {
+        const turnBanner = document.getElementById('turnBanner');
+        const turnDot = document.getElementById('turnDot');
+        const turnTitle = document.getElementById('turnTitle');
+        const turnSubtitle = document.getElementById('turnSubtitle');
+        const aiThinkingBadge = document.getElementById('aiThinkingBadge');
+        const turnCountBadge = document.getElementById('turnCountBadge');
+
+        const selfRing = document.getElementById('selfAvatarRing');
+        const oppRing = document.getElementById('oppAvatarRing');
+        const selfSideBadge = document.getElementById('selfSideBadge');
+        const oppSideBadge = document.getElementById('oppSideBadge');
+        const redRoleTag = document.getElementById('redRoleTag');
+        const blueRoleTag = document.getElementById('blueRoleTag');
+        const stageHintLabel = document.getElementById('stageHintLabel');
+        const centerCampPill = document.getElementById('centerCampPill');
+
+        turnCountBadge.textContent = `第 ${state.moveLog.length + 1} 手`;
+
+        // Update Image-2 style center camp pill ("我是红方" / "我是蓝方") & sidebar tags
+        if (!state.selfSide) {
+          centerCampPill.textContent = '首翻定色';
+          centerCampPill.className = 'camp-pill-wait px-4 sm:px-5 py-1 rounded-full text-xs sm:text-sm font-extrabold tracking-wide whitespace-nowrap transition-all';
+          selfSideBadge.textContent = '自己·待定';
+          selfSideBadge.className = 'text-[10px] font-bold text-amber-300';
+          oppSideBadge.textContent = '对手·待定';
+          oppSideBadge.className = 'text-[10px] font-bold text-slate-400';
+          redRoleTag.textContent = '(待翻牌定色)';
+          blueRoleTag.textContent = '(待翻牌定色)';
+          stageHintLabel.textContent = '👆 请翻开第1张“?”方块，翻出的颜色即为本局您的颜色';
+        } else if (state.selfSide === SIDE_RED) {
+          centerCampPill.textContent = '我是红方';
+          centerCampPill.className = 'camp-pill-red px-4 sm:px-5 py-1 rounded-full text-xs sm:text-sm font-extrabold tracking-wide whitespace-nowrap transition-all';
+          selfSideBadge.textContent = '我是红方';
+          selfSideBadge.className = 'text-[10px] font-bold text-rose-400';
+          oppSideBadge.textContent = '对手·蓝方';
+          oppSideBadge.className = 'text-[10px] font-bold text-sky-400';
+          redRoleTag.textContent = '(自己)';
+          blueRoleTag.textContent = state.mode === 'pve' ? '(对手AI)' : '(对手)';
+          stageHintLabel.textContent = state.turnRole === ROLE_SELF ? '轮到您（红方）行动：翻牌或走红方萌宠' : '对手（蓝方）回合';
+        } else {
+          centerCampPill.textContent = '我是蓝方';
+          centerCampPill.className = 'camp-pill-blue px-4 sm:px-5 py-1 rounded-full text-xs sm:text-sm font-extrabold tracking-wide whitespace-nowrap transition-all';
+          selfSideBadge.textContent = '我是蓝方';
+          selfSideBadge.className = 'text-[10px] font-bold text-sky-400';
+          oppSideBadge.textContent = '对手·红方';
+          oppSideBadge.className = 'text-[10px] font-bold text-rose-400';
+          redRoleTag.textContent = state.mode === 'pve' ? '(对手AI)' : '(对手)';
+          blueRoleTag.textContent = '(自己)';
+          stageHintLabel.textContent = state.turnRole === ROLE_SELF ? '轮到您（蓝方）行动：翻牌或走蓝方萌宠' : '对手（红方）回合';
+        }
+
+        const activeSide = getActiveSide();
+
+        if (state.gameOver) {
+          const isRedWin = state.winnerSide === SIDE_RED;
+          turnBanner.className = `flex items-center justify-between p-2.5 rounded-xl border ${
+            state.winnerSide === 'draw'
+              ? 'bg-amber-500/20 border-amber-400/50'
+              : (isRedWin ? 'bg-rose-500/20 border-rose-400/50' : 'bg-sky-500/20 border-sky-400/50')
+          }`;
+          turnDot.className = `w-3.5 h-3.5 rounded-full ${
+            state.winnerSide === 'draw' ? 'bg-amber-400' : (isRedWin ? 'bg-rose-400' : 'bg-sky-400')
+          }`;
+          turnTitle.textContent = state.winnerSide === 'draw'
+            ? '🤝 本局和棋'
+            : (state.winnerRole === ROLE_SELF ? `🏆 ${getRoleLabel(ROLE_SELF)} 获胜` : `🏆 ${getRoleLabel(ROLE_OPP)} 获胜`);
+          turnTitle.className = 'text-sm font-bold text-amber-200';
+          turnSubtitle.textContent = state.winReason;
+          aiThinkingBadge.classList.add('hidden');
+        } else if (state.turnRole === ROLE_SELF) {
+          const isBlue = activeSide === SIDE_BLUE;
+          turnBanner.className = `flex items-center justify-between p-2.5 rounded-xl border ${
+            !activeSide
+              ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/10 border-amber-500/40'
+              : (isBlue
+                  ? 'bg-gradient-to-r from-sky-500/20 to-indigo-500/10 border-sky-500/40'
+                  : 'bg-gradient-to-r from-rose-500/20 to-amber-500/10 border-rose-500/40')
+          }`;
+          turnDot.className = `w-3.5 h-3.5 rounded-full animate-pulse ${
+            !activeSide ? 'bg-amber-400' : (isBlue ? 'bg-sky-400' : 'bg-rose-500')
+          }`;
+          turnTitle.textContent = !activeSide
+            ? '自己行棋 (首翻定色)'
+            : `自己 (${isBlue ? '蓝方' : '红方'}) 行棋`;
+          turnTitle.className = `text-sm font-bold ${!activeSide ? 'text-amber-200' : (isBlue ? 'text-sky-200' : 'text-rose-200')}`;
+          turnSubtitle.textContent = !activeSide
+            ? '翻开第1张“?”方块，其颜色即为本局您的颜色'
+            : `点击“?”翻牌，或点击己方${isBlue ? '蓝方' : '红方'}萌宠走子`;
+          aiThinkingBadge.classList.add('hidden');
+
+          selfRing.className = 'w-8 h-8 rounded-full p-0.5 bg-gradient-to-b from-amber-300 to-amber-600 ring-2 ring-amber-300 flex items-center justify-center text-sm scale-110 transition-all';
+          oppRing.className = 'w-8 h-8 rounded-full p-0.5 bg-gradient-to-b from-slate-500 to-slate-700 opacity-70 flex items-center justify-center text-sm transition-all';
+        } else {
+          const isBlue = activeSide === SIDE_BLUE;
+          turnBanner.className = `flex items-center justify-between p-2.5 rounded-xl border ${
+            isBlue
+              ? 'bg-gradient-to-r from-sky-500/20 to-indigo-500/10 border-sky-500/40'
+              : 'bg-gradient-to-r from-rose-500/20 to-amber-500/10 border-rose-500/40'
+          }`;
+          turnDot.className = `w-3.5 h-3.5 rounded-full animate-pulse ${isBlue ? 'bg-sky-400' : 'bg-rose-500'}`;
+          turnTitle.textContent = state.mode === 'pve'
+            ? `对手 L.eason (${isBlue ? '蓝方' : '红方'}) 行棋`
+            : `对手 (${isBlue ? '蓝方' : '红方'}) 行棋`;
+          turnTitle.className = `text-sm font-bold ${isBlue ? 'text-sky-200' : 'text-rose-200'}`;
+          turnSubtitle.textContent = state.mode === 'pve'
+            ? '对手正在思考翻牌或进攻...'
+            : `请对手翻开“?”方块或移动${isBlue ? '蓝方' : '红方'}萌宠`;
+          if (state.aiThinking) {
+            aiThinkingBadge.classList.remove('hidden');
+          } else {
+            aiThinkingBadge.classList.add('hidden');
+          }
+
+          oppRing.className = 'w-8 h-8 rounded-full p-0.5 bg-gradient-to-b from-sky-300 to-sky-600 ring-2 ring-amber-300 flex items-center justify-center text-sm scale-110 transition-all';
+          selfRing.className = 'w-8 h-8 rounded-full p-0.5 bg-gradient-to-b from-slate-500 to-slate-700 opacity-70 flex items-center justify-center text-sm transition-all';
+        }
+
+        const { redPieces, bluePieces, unflipped } = countRemainingPieces(state.board);
+        const redAliveRanks = redPieces.map(p => p.rank);
+        const blueAliveRanks = bluePieces.map(p => p.rank);
+
+        document.getElementById('unflippedCountBadge').textContent = `${unflipped} 张`;
+        document.getElementById('redAliveCount').textContent = `${redAliveRanks.length}只`;
+        document.getElementById('blueAliveCount').textContent = `${blueAliveRanks.length}只`;
+
+        const redCaptured = [];
+        const blueCaptured = [];
+        for (let r = 8; r >= 1; r--) {
+          if (!redAliveRanks.includes(r)) redCaptured.push(r);
+          if (!blueAliveRanks.includes(r)) blueCaptured.push(r);
+        }
+
+        const renderDead = (ranks) => {
+          if (ranks.length === 0) return '<span class="text-[11px] text-slate-500">暂无</span>';
+          return ranks.map(rk => `<span class="px-1.5 py-0.5 rounded bg-slate-900/90 border border-slate-700 text-[11px]">${ANIMALS[rk].emoji}${ANIMALS[rk].name}</span>`).join('');
+        };
+
+        document.getElementById('redCapturedList').innerHTML = renderDead(redCaptured);
+        document.getElementById('blueCapturedList').innerHTML = renderDead(blueCaptured);
+
+        document.getElementById('undoBtn').disabled = state.history.length === 0 || state.aiThinking;
+        document.getElementById('hintBtn').disabled = state.gameOver || state.aiThinking;
+
+        const logBox = document.getElementById('moveLogContainer');
+        document.getElementById('moveTotalText').textContent = `共 ${state.moveLog.length} 步`;
+        if (state.moveLog.length === 0) {
+          logBox.innerHTML = '<div class="text-slate-500 text-center py-8">对局尚未开始，请自己翻开第一张牌定色</div>';
+        } else {
+          logBox.innerHTML = state.moveLog
+            .slice()
+            .reverse()
+            .map(item => `
+              <div class="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-slate-900/60 border border-slate-800/80">
+                <span class="font-mono text-[11px] text-slate-400">#${item.step}</span>
+                <span class="font-medium ${item.side === SIDE_RED ? 'text-rose-300' : 'text-sky-300'}">${item.text}</span>
+              </div>
+            `)
+            .join('');
+        }
+      }
+
+      // ==========================================
+      // 8. IMAGE-2 ACCURATE Q-CHIBI 3D BLOCK RENDERER
+      // ==========================================
+      const canvas = document.getElementById('gameCanvas');
+      const ctx = canvas.getContext('2d');
+      let cellW = 88;
+      let cellH = 92;
+      let gapX = 18;
+      let gapY = 22;
+      let padX = 14;
+      let padY = 20;
+
+      function resizeCanvas() {
+        const host = document.getElementById('canvasHost');
+        const availW = Math.min(436, host.clientWidth - 16);
+        gapX = Math.max(12, Math.floor(availW * 0.045));
+        gapY = Math.max(14, Math.floor(availW * 0.052));
+        padX = Math.max(10, Math.floor(availW * 0.03));
+        padY = Math.max(16, Math.floor(availW * 0.04));
+        cellW = Math.floor((availW - padX * 2 - gapX * (COLS - 1)) / COLS);
+        cellH = Math.floor(cellW * 1.04);
+
+        const cssW = padX * 2 + cellW * COLS + gapX * (COLS - 1);
+        const cssH = padY * 2 + cellH * ROWS + gapY * (ROWS - 1);
+
+        const dpr = window.devicePixelRatio || 1;
+        canvas.style.width = `${cssW}px`;
+        canvas.style.height = `${cssH}px`;
+        canvas.width = Math.floor(cssW * dpr);
+        canvas.height = Math.floor(cssH * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        drawBoard();
+      }
+
+      function toVisualRect(col, row) {
+        const vc = state.flipped ? (COLS - 1 - col) : col;
+        const vr = state.flipped ? (ROWS - 1 - row) : row;
+        return {
+          x: padX + vc * (cellW + gapX),
+          y: padY + vr * (cellH + gapY),
+          w: cellW,
+          h: cellH
+        };
+      }
+
+      function fromScreenPoint(px, py) {
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            const rect = toVisualRect(c, r);
+            if (px >= rect.x - 4 && px <= rect.x + rect.w + 4 && py >= rect.y - 12 && py <= rect.y + rect.h + 4) {
+              return { col: c, row: r };
+            }
+          }
+        }
+        return null;
+      }
+
+      function drawRoundedRect(x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+      }
+
+      // Draw the Cream-Olive 3D Recessed Pedestal Base at every cell (from Image 2!)
+      function drawPedestalBase(x, y, w, h) {
+        ctx.save();
+        // Drop shadow on grass
+        ctx.shadowColor = 'rgba(20, 50, 8, 0.38)';
+        ctx.shadowBlur = 6;
+        ctx.shadowOffsetY = 4;
+
+        // Outer 3D lower lip
+        drawRoundedRect(x, y + 4, w, h - 2, 16);
+        ctx.fillStyle = '#b4bd84';
+        ctx.fill();
+
+        ctx.shadowColor = 'transparent';
+
+        // Main cream-olive rim
+        drawRoundedRect(x, y, w, h - 4, 16);
+        ctx.fillStyle = '#e5e9b8';
+        ctx.fill();
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = '#f4f6d8';
+        ctx.stroke();
+
+        // Recessed inner olive well
+        const wellPad = Math.max(7, Math.floor(w * 0.1));
+        drawRoundedRect(x + wellPad, y + wellPad - 1, w - wellPad * 2, h - 4 - wellPad * 2, 11);
+        ctx.fillStyle = '#9fa874';
+        ctx.fill();
+
+        // Inner top shadow inside well
+        ctx.strokeStyle = 'rgba(70, 80, 40, 0.35)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.restore();
+      }
+
+      // Draw Image-2 Unflipped 3D Wooden Sunburst '?' Block sitting on the pedestal
+      function drawChibiMysteryBlock(x, y, w, h, scaleX = 1, isHighlighted = false) {
+        ctx.save();
+        const cx = x + w / 2;
+        const cy = y + h / 2;
+        ctx.translate(cx, cy);
+        ctx.scale(scaleX, 1);
+        ctx.translate(-w / 2, -h / 2);
+
+        const pad = 4;
+        const bx = pad;
+        const by = 0;
+        const bw = w - pad * 2;
+        const bh = h - 10;
+
+        // 1. Dark brown 3D block side wall underneath (gives chunky 3D block look in Image 2!)
+        drawRoundedRect(bx, by + 8, bw, bh, 14);
+        ctx.fillStyle = '#6e3a0c';
+        ctx.fill();
+
+        // 2. Cream-gold outer block top frame
+        drawRoundedRect(bx, by, bw, bh, 14);
+        ctx.fillStyle = isHighlighted ? '#fef08a' : '#f3cf8a';
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#b87324';
+        ctx.stroke();
+
+        // 3. Clipped sunburst rays on the inner face
+        const inPad = 5;
+        const ix = bx + inPad;
+        const iy = by + inPad;
+        const iw = bw - inPad * 2;
+        const ih = bh - inPad * 2;
+
+        ctx.save();
+        drawRoundedRect(ix, iy, iw, ih, 10);
+        ctx.clip();
+
+        // Base warm orange fill
+        ctx.fillStyle = '#e88316';
+        ctx.fillRect(ix, iy, iw, ih);
+
+        // Alternating radial sunburst wedges (just like Image 2's '?' block!)
+        const sunX = ix + iw / 2;
+        const sunY = iy + ih / 2;
+        const numRays = 12;
+        const maxR = Math.max(iw, ih);
+        ctx.fillStyle = '#cf6510';
+        for (let i = 0; i < numRays; i += 2) {
+          const a1 = (Math.PI * 2 * i) / numRays;
+          const a2 = (Math.PI * 2 * (i + 1)) / numRays;
+          ctx.beginPath();
+          ctx.moveTo(sunX, sunY);
+          ctx.arc(sunX, sunY, maxR, a1, a2);
+          ctx.closePath();
+          ctx.fill();
+        }
+        ctx.restore();
+
+        // 4. Cute cream-yellow '?' question mark with brown outline in center
+        ctx.font = `900 ${Math.floor(bh * 0.62)}px "Inter", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#78350f';
+        ctx.strokeText('?', bx + bw / 2, by + bh / 2 + 2);
+        ctx.fillStyle = '#fef08a';
+        ctx.fillText('?', bx + bw / 2, by + bh / 2 + 2);
+
+        ctx.restore();
+      }
+
+      // Draw Full-Body Sitting Chibi Animal (Image 2 Style!)
+      function drawFullBodyChibiAnimal(rank, cx, cy, size) {
+        ctx.save();
+        ctx.translate(cx, cy);
+        const s = size * 0.43;
+
+        if (rank === 8) {
+          // 象 (Elephant): Pastel-blue sitting elephant, pink inner ears, blue star hat!
+          // Sitting body & legs
+          ctx.fillStyle = '#7cc0ff';
+          drawRoundedRect(-s * 0.48, s * 0.15, s * 0.96, s * 0.68, s * 0.28);
+          ctx.fill();
+          ctx.lineWidth = 1.5;
+          ctx.strokeStyle = '#2b6cb0';
+          ctx.stroke();
+
+          // Cute sitting feet
+          ctx.fillStyle = '#bae6fd';
+          ctx.beginPath();
+          ctx.arc(-s * 0.32, s * 0.72, s * 0.18, 0, Math.PI * 2);
+          ctx.arc(s * 0.32, s * 0.72, s * 0.18, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Big floppy ears (blue outer, pink inner)
+          ctx.fillStyle = '#7cc0ff';
+          ctx.beginPath();
+          ctx.ellipse(-s * 0.78, -s * 0.12, s * 0.38, s * 0.52, 0.2, 0, Math.PI * 2);
+          ctx.ellipse(s * 0.78, -s * 0.12, s * 0.38, s * 0.52, -0.2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = '#f472b6';
+          ctx.beginPath();
+          ctx.ellipse(-s * 0.76, -s * 0.1, s * 0.24, s * 0.36, 0.2, 0, Math.PI * 2);
+          ctx.ellipse(s * 0.76, -s * 0.1, s * 0.24, s * 0.36, -0.2, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Head
+          ctx.fillStyle = '#90cdf4';
+          ctx.beginPath();
+          ctx.arc(0, -s * 0.16, s * 0.66, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Sparkly dark eyes
+          ctx.fillStyle = '#31102f';
+          ctx.beginPath();
+          ctx.arc(-s * 0.28, -s * 0.2, s * 0.15, 0, Math.PI * 2);
+          ctx.arc(s * 0.28, -s * 0.2, s * 0.15, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(-s * 0.32, -s * 0.25, s * 0.06, 0, Math.PI * 2);
+          ctx.arc(s * 0.24, -s * 0.25, s * 0.06, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Curved trunk
+          ctx.fillStyle = '#7cc0ff';
+          ctx.beginPath();
+          ctx.moveTo(-s * 0.14, -s * 0.12);
+          ctx.quadraticCurveTo(-s * 0.14, s * 0.35, s * 0.16, s * 0.32);
+          ctx.quadraticCurveTo(s * 0.26, s * 0.28, s * 0.14, s * 0.16);
+          ctx.quadraticCurveTo(s * 0.05, s * 0.18, s * 0.08, -s * 0.12);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // Little blue cap with yellow star on top (exact match to Image 2!)
+          ctx.fillStyle = '#2563eb';
+          drawRoundedRect(-s * 0.32, -s * 0.96, s * 0.64, s * 0.32, s * 0.12);
+          ctx.fill();
+          ctx.fillStyle = '#facc15';
+          ctx.beginPath();
+          ctx.arc(0, -s * 0.8, s * 0.13, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (rank === 7) {
+          // 狮 (Lion): Fluffy golden-brown cloud mane, sitting body, cute happy squinting eyes!
+          // Sitting body
+          ctx.fillStyle = '#f59e0b';
+          drawRoundedRect(-s * 0.42, s * 0.18, s * 0.84, s * 0.62, s * 0.25);
+          ctx.fill();
+          ctx.fillStyle = '#fef3c7';
+          ctx.beginPath();
+          ctx.ellipse(0, s * 0.48, s * 0.24, s * 0.26, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Puffy scalloped mane
+          ctx.fillStyle = '#d97706';
+          const puffs = 10;
+          for (let i = 0; i < puffs; i++) {
+            const ang = (Math.PI * 2 * i) / puffs;
+            ctx.beginPath();
+            ctx.arc(Math.cos(ang) * s * 0.56, -s * 0.2 + Math.sin(ang) * s * 0.52, s * 0.32, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          // Face
+          ctx.fillStyle = '#fde68a';
+          ctx.beginPath();
+          ctx.arc(0, -s * 0.16, s * 0.54, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Cute squinted happy eyes (like Image 2's Lion!)
+          ctx.strokeStyle = '#451a03';
+          ctx.lineWidth = Math.max(2, s * 0.09);
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(-s * 0.36, -s * 0.22);
+          ctx.quadraticCurveTo(-s * 0.24, -s * 0.12, -s * 0.14, -s * 0.22);
+          ctx.moveTo(s * 0.14, -s * 0.22);
+          ctx.quadraticCurveTo(s * 0.24, -s * 0.12, s * 0.36, -s * 0.22);
+          ctx.stroke();
+
+          // Pink cheeks & nose
+          ctx.fillStyle = '#fb7185';
+          ctx.beginPath();
+          ctx.arc(-s * 0.36, -s * 0.04, s * 0.09, 0, Math.PI * 2);
+          ctx.arc(s * 0.36, -s * 0.04, s * 0.09, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#78350f';
+          ctx.beginPath();
+          ctx.arc(0, -s * 0.05, s * 0.09, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (rank === 6) {
+          // 虎 (Tiger): Cute sitting orange tiger, striped belly, '王' forehead, big sparkly eyes!
+          // Sitting body
+          ctx.fillStyle = '#fb923c';
+          drawRoundedRect(-s * 0.44, s * 0.16, s * 0.88, s * 0.64, s * 0.26);
+          ctx.fill();
+          ctx.lineWidth = 1.5;
+          ctx.strokeStyle = '#9a3412';
+          ctx.stroke();
+
+          // White belly with stripes
+          ctx.fillStyle = '#fff7ed';
+          ctx.beginPath();
+          ctx.ellipse(0, s * 0.48, s * 0.26, s * 0.28, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Ears
+          ctx.fillStyle = '#fb923c';
+          ctx.beginPath();
+          ctx.arc(-s * 0.52, -s * 0.64, s * 0.22, 0, Math.PI * 2);
+          ctx.arc(s * 0.52, -s * 0.64, s * 0.22, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Head
+          ctx.fillStyle = '#f97316';
+          ctx.beginPath();
+          ctx.ellipse(0, -s * 0.2, s * 0.68, s * 0.56, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Forehead '王' stripes
+          ctx.strokeStyle = '#431407';
+          ctx.lineWidth = Math.max(2, s * 0.09);
+          ctx.beginPath();
+          ctx.moveTo(-s * 0.22, -s * 0.58);
+          ctx.lineTo(s * 0.22, -s * 0.58);
+          ctx.moveTo(-s * 0.18, -s * 0.44);
+          ctx.lineTo(s * 0.18, -s * 0.44);
+          ctx.moveTo(0, -s * 0.62);
+          ctx.lineTo(0, -s * 0.36);
+          ctx.stroke();
+
+          // Sparkly eyes
+          ctx.fillStyle = '#1c1917';
+          ctx.beginPath();
+          ctx.arc(-s * 0.28, -s * 0.18, s * 0.14, 0, Math.PI * 2);
+          ctx.arc(s * 0.28, -s * 0.18, s * 0.14, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(-s * 0.32, -s * 0.22, s * 0.05, 0, Math.PI * 2);
+          ctx.arc(s * 0.24, -s * 0.22, s * 0.05, 0, Math.PI * 2);
+          ctx.fill();
+
+          // White muzzle
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.ellipse(0, -s * 0.02, s * 0.24, s * 0.14, 0, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (rank === 5) {
+          // 豹 (Leopard): Cute golden sitting leopard with brown spots
+          ctx.fillStyle = '#facc15';
+          drawRoundedRect(-s * 0.4, s * 0.18, s * 0.8, s * 0.62, s * 0.25);
+          ctx.fill();
+          ctx.lineWidth = 1.5;
+          ctx.strokeStyle = '#a16207';
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.arc(-s * 0.48, -s * 0.6, s * 0.2, 0, Math.PI * 2);
+          ctx.arc(s * 0.48, -s * 0.6, s * 0.2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.ellipse(0, -s * 0.18, s * 0.62, s * 0.52, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Spots
+          ctx.fillStyle = '#854d0e';
+          [[-0.35, -0.45], [0.35, -0.45], [-0.42, -0.05], [0.42, -0.05], [-0.2, 0.45], [0.2, 0.45]].forEach(([dx, dy]) => {
+            ctx.beginPath();
+            ctx.arc(s * dx, s * dy, s * 0.08, 0, Math.PI * 2);
+            ctx.fill();
+          });
+
+          // Eyes
+          ctx.fillStyle = '#1c1917';
+          ctx.beginPath();
+          ctx.arc(-s * 0.24, -s * 0.18, s * 0.13, 0, Math.PI * 2);
+          ctx.arc(s * 0.24, -s * 0.18, s * 0.13, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(-s * 0.27, -s * 0.22, s * 0.05, 0, Math.PI * 2);
+          ctx.arc(s * 0.21, -s * 0.22, s * 0.05, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (rank === 4) {
+          // 狼 (Wolf): Sitting grey & white wolf with red eye scar (exact match to Image 2!)
+          // Sitting dark-grey body
+          ctx.fillStyle = '#475569';
+          drawRoundedRect(-s * 0.42, s * 0.16, s * 0.84, s * 0.64, s * 0.26);
+          ctx.fill();
+          ctx.fillStyle = '#f8fafc';
+          ctx.beginPath();
+          ctx.ellipse(0, s * 0.42, s * 0.22, s * 0.24, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Pointed wolf ears
+          ctx.fillStyle = '#334155';
+          ctx.beginPath();
+          ctx.moveTo(-s * 0.62, -s * 0.35);
+          ctx.lineTo(-s * 0.48, -s * 0.92);
+          ctx.lineTo(-s * 0.12, -s * 0.58);
+          ctx.moveTo(s * 0.62, -s * 0.35);
+          ctx.lineTo(s * 0.48, -s * 0.92);
+          ctx.lineTo(s * 0.12, -s * 0.58);
+          ctx.closePath();
+          ctx.fill();
+
+          // Head (dark grey top, white lower face)
+          ctx.fillStyle = '#334155';
+          ctx.beginPath();
+          ctx.ellipse(0, -s * 0.2, s * 0.66, s * 0.54, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#f8fafc';
+          ctx.beginPath();
+          ctx.ellipse(0, -s * 0.06, s * 0.58, s * 0.36, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Red vertical scar over left side of viewer (wolf's right eye, just like Image 2!)
+          ctx.strokeStyle = '#ef4444';
+          ctx.lineWidth = 2.2;
+          ctx.beginPath();
+          ctx.moveTo(-s * 0.32, -s * 0.38);
+          ctx.lineTo(-s * 0.32, s * 0.04);
+          ctx.stroke();
+
+          // Eyes & nose
+          ctx.fillStyle = '#0f172a';
+          ctx.beginPath();
+          ctx.arc(-s * 0.28, -s * 0.16, s * 0.13, 0, Math.PI * 2);
+          ctx.arc(s * 0.28, -s * 0.16, s * 0.13, 0, Math.PI * 2);
+          ctx.arc(0, -s * 0.02, s * 0.09, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(-s * 0.31, -s * 0.2, s * 0.05, 0, Math.PI * 2);
+          ctx.arc(s * 0.25, -s * 0.2, s * 0.05, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (rank === 3) {
+          // 狗 (Dog): Cute tan Pug (巴哥犬) with dark muzzle mask, floppy ears, pink tongue (exact match to Image 2!)
+          // Sitting tan body
+          ctx.fillStyle = '#eab676';
+          drawRoundedRect(-s * 0.44, s * 0.16, s * 0.88, s * 0.64, s * 0.26);
+          ctx.fill();
+          ctx.lineWidth = 1.5;
+          ctx.strokeStyle = '#8c5828';
+          ctx.stroke();
+
+          // Floppy orange-brown ears
+          ctx.fillStyle = '#d97706';
+          ctx.beginPath();
+          ctx.ellipse(-s * 0.64, -s * 0.38, s * 0.22, s * 0.36, 0.35, 0, Math.PI * 2);
+          ctx.ellipse(s * 0.64, -s * 0.38, s * 0.22, s * 0.36, -0.35, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Round pug head
+          ctx.fillStyle = '#f3c68f';
+          ctx.beginPath();
+          ctx.ellipse(0, -s * 0.18, s * 0.66, s * 0.54, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Dark brown pug muzzle mask
+          ctx.fillStyle = '#785238';
+          ctx.beginPath();
+          ctx.ellipse(0, -s * 0.04, s * 0.36, s * 0.24, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Cute pink tongue
+          ctx.fillStyle = '#fb7185';
+          ctx.beginPath();
+          ctx.arc(0, s * 0.1, s * 0.1, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Big round pug eyes
+          ctx.fillStyle = '#291d12';
+          ctx.beginPath();
+          ctx.arc(-s * 0.3, -s * 0.18, s * 0.13, 0, Math.PI * 2);
+          ctx.arc(s * 0.3, -s * 0.18, s * 0.13, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(-s * 0.33, -s * 0.22, s * 0.05, 0, Math.PI * 2);
+          ctx.arc(s * 0.27, -s * 0.22, s * 0.05, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (rank === 2) {
+          // 猫 (Cat): Cute orange-and-white tabby kitten (Image 2 style!)
+          ctx.fillStyle = '#fb923c';
+          drawRoundedRect(-s * 0.38, s * 0.18, s * 0.76, s * 0.6, s * 0.24);
+          ctx.fill();
+
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.ellipse(0, s * 0.46, s * 0.22, s * 0.25, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Pointed cat ears
+          ctx.fillStyle = '#fb923c';
+          ctx.beginPath();
+          ctx.moveTo(-s * 0.56, -s * 0.32);
+          ctx.lineTo(-s * 0.46, -s * 0.82);
+          ctx.lineTo(-s * 0.14, -s * 0.54);
+          ctx.moveTo(s * 0.56, -s * 0.32);
+          ctx.lineTo(s * 0.46, -s * 0.82);
+          ctx.lineTo(s * 0.14, -s * 0.54);
+          ctx.closePath();
+          ctx.fill();
+
+          // Head
+          ctx.fillStyle = '#fed7aa';
+          ctx.beginPath();
+          ctx.ellipse(0, -s * 0.16, s * 0.58, s * 0.48, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Eyes & pink nose
+          ctx.fillStyle = '#1c1917';
+          ctx.beginPath();
+          ctx.arc(-s * 0.24, -s * 0.16, s * 0.12, 0, Math.PI * 2);
+          ctx.arc(s * 0.24, -s * 0.16, s * 0.12, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#f43f5e';
+          ctx.beginPath();
+          ctx.arc(0, -s * 0.04, s * 0.07, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          // 鼠 (Rat, rank 1): Cute sitting taupe/brown mouse with big pink ears & white oval belly (exact match to Image 2!)
+          // Sitting body
+          ctx.fillStyle = '#b08968';
+          drawRoundedRect(-s * 0.38, s * 0.18, s * 0.76, s * 0.62, s * 0.26);
+          ctx.fill();
+          ctx.lineWidth = 1.5;
+          ctx.strokeStyle = '#6c4830';
+          ctx.stroke();
+
+          // White oval belly
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.ellipse(0, s * 0.48, s * 0.22, s * 0.25, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Big round ears
+          ctx.fillStyle = '#b08968';
+          ctx.beginPath();
+          ctx.arc(-s * 0.52, -s * 0.58, s * 0.3, 0, Math.PI * 2);
+          ctx.arc(s * 0.52, -s * 0.58, s * 0.3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = '#f4a2b8';
+          ctx.beginPath();
+          ctx.arc(-s * 0.52, -s * 0.58, s * 0.18, 0, Math.PI * 2);
+          ctx.arc(s * 0.52, -s * 0.58, s * 0.18, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Chubby head
+          ctx.fillStyle = '#c39b7b';
+          ctx.beginPath();
+          ctx.ellipse(0, -s * 0.16, s * 0.62, s * 0.5, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Cute dark eyes & pink cheeks
+          ctx.fillStyle = '#291811';
+          ctx.beginPath();
+          ctx.arc(-s * 0.26, -s * 0.14, s * 0.11, 0, Math.PI * 2);
+          ctx.arc(s * 0.26, -s * 0.14, s * 0.11, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(-s * 0.29, -s * 0.17, s * 0.04, 0, Math.PI * 2);
+          ctx.arc(s * 0.23, -s * 0.17, s * 0.04, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#fb7185';
+          ctx.beginPath();
+          ctx.arc(-s * 0.4, -s * 0.02, s * 0.08, 0, Math.PI * 2);
+          ctx.arc(s * 0.4, -s * 0.02, s * 0.08, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Little white nose/mouth area
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(0, -s * 0.02, s * 0.11, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.restore();
+      }
+
+      // Draw Revealed 3D Cushion + Full-Body Chibi Animal + Bottom-Right Sticker Text (Image 2 Style!)
+      function drawChibiRevealedBlock(piece, x, y, w, h, scaleX = 1, isSelected = false, isLastMoveTarget = false) {
+        const isRed = piece.side === SIDE_RED;
+        const info = ANIMALS[piece.rank];
+
+        ctx.save();
+        const cx = x + w / 2;
+        const cy = y + h / 2;
+        ctx.translate(cx, cy);
+        ctx.scale(scaleX, 1);
+        ctx.translate(-w / 2, -h / 2);
+
+        const pad = 4;
+        const bx = pad;
+        const by = 4;
+        const bw = w - pad * 2;
+        const bh = h - 14;
+
+        // 1. 3D Colored Cushion Side Wall (Red #b81d2c vs Blue #0b489c)
+        drawRoundedRect(bx, by + 6, bw, bh, 14);
+        ctx.fillStyle = isRed ? '#b32030' : '#0c4da2';
+        ctx.fill();
+
+        // 2. Top Colored Cushion Platform (Red #f25c69 vs Blue #1d8cf8)
+        drawRoundedRect(bx, by, bw, bh, 14);
+        const platGrad = ctx.createLinearGradient(0, by, 0, by + bh);
+        if (isRed) {
+          platGrad.addColorStop(0, '#ff7b86');
+          platGrad.addColorStop(1, '#eb4858');
+        } else {
+          platGrad.addColorStop(0, '#4facfe');
+          platGrad.addColorStop(1, '#1877f2');
+        }
+        ctx.fillStyle = platGrad;
+        ctx.fill();
+
+        ctx.lineWidth = isSelected ? 3.5 : 2;
+        ctx.strokeStyle = isSelected ? '#fde047' : (isRed ? '#ffb3ba' : '#93c5fd');
+        ctx.stroke();
+
+        // 3. Draw Full-Body Chibi Animal sitting on the 3D cushion (head slightly overlapping top!)
+        drawFullBodyChibiAnimal(piece.rank, w / 2, by + bh * 0.42, Math.min(w, h) * 1.02);
+
+        // 4. Bottom-Right White-Outlined Sticker Character ('象', '虎', '狼', '鼠', etc. just like Image 2!)
+        const charX = w - pad - Math.floor(w * 0.18);
+        const charY = by + bh - Math.floor(h * 0.12);
+        ctx.font = `900 ${Math.floor(h * 0.24)}px "Noto Serif SC", "PingFang SC", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = '#ffffff';
+        ctx.strokeText(info.name, charX, charY);
+        ctx.fillStyle = isRed ? '#e64958' : '#1b85e8';
+        ctx.fillText(info.name, charX, charY);
+
+        // 5. '上一步' (Last Move) Speech Bubble at top-right corner of the card (Exact match to Image 2!)
+        if (isLastMoveTarget) {
+          const bubW = 38;
+          const bubH = 16;
+          const bubX = w - bubW - 2;
+          const bubY = -2;
+          drawRoundedRect(bubX, bubY, bubW, bubH, 6);
+          ctx.fillStyle = '#ffffff';
+          ctx.fill();
+          ctx.lineWidth = 1.5;
+          ctx.strokeStyle = isRed ? '#e11d48' : '#0284c7';
+          ctx.stroke();
+
+          ctx.font = 'bold 9.5px "PingFang SC", sans-serif';
+          ctx.fillStyle = isRed ? '#be123c' : '#0369a1';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('上一步', bubX + bubW / 2, bubY + bubH / 2 + 0.5);
+        }
+
+        ctx.restore();
+      }
+
+      // Draw a 3D directional arrow between two adjacent cells (just like Image 2's red/blue arrows!)
+      function drawBetweenCellArrow(fromCol, fromRow, toCol, toRow, colorSide, badgeLabel = null) {
+        const r1 = toVisualRect(fromCol, fromRow);
+        const r2 = toVisualRect(toCol, toRow);
+        const x1 = r1.x + r1.w / 2;
+        const y1 = r1.y + r1.h / 2;
+        const x2 = r2.x + r2.w / 2;
+        const y2 = r2.y + r2.h / 2;
+
+        const mx = (x1 + x2) / 2;
+        const my = (y1 + y2) / 2;
+        const angle = Math.atan2(y2 - y1, x2 - x1);
+
+        ctx.save();
+        ctx.translate(mx, my);
+        ctx.rotate(angle);
+
+        // Draw chunky 3D arrow pointing along +X
+        const len = 24;
+        const headW = 13;
+        const shaftW = 6.5;
+
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetY = 2;
+
+        ctx.beginPath();
+        ctx.moveTo(-len / 2, -shaftW);
+        ctx.lineTo(2, -shaftW);
+        ctx.lineTo(2, -headW);
+        ctx.lineTo(len / 2 + 2, 0);
+        ctx.lineTo(2, headW);
+        ctx.lineTo(2, shaftW);
+        ctx.lineTo(-len / 2, shaftW);
+        ctx.closePath();
+
+        const grad = ctx.createLinearGradient(-len / 2, 0, len / 2, 0);
+        if (colorSide === SIDE_RED) {
+          grad.addColorStop(0, '#fda4af');
+          grad.addColorStop(1, '#e11d48');
+        } else if (colorSide === SIDE_BLUE) {
+          grad.addColorStop(0, '#93c5fd');
+          grad.addColorStop(1, '#1d4ed8');
+        } else {
+          grad.addColorStop(0, '#fde047');
+          grad.addColorStop(1, '#16a34a');
+        }
+        ctx.fillStyle = grad;
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#ffffff';
+        ctx.stroke();
+        ctx.restore();
+
+        if (badgeLabel) {
+          ctx.save();
+          const tagW = 54;
+          const tagH = 19;
+          drawRoundedRect(r2.x + r2.w / 2 - tagW / 2, r2.y + 4, tagW, tagH, 9);
+          ctx.fillStyle = badgeLabel.bg;
+          ctx.fill();
+          ctx.lineWidth = 1.5;
+          ctx.strokeStyle = '#ffffff';
+          ctx.stroke();
+          ctx.font = 'bold 10.5px "PingFang SC", sans-serif';
+          ctx.fillStyle = '#ffffff';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(badgeLabel.text, r2.x + r2.w / 2, r2.y + 13.5);
+          ctx.restore();
+        }
+      }
+
+      function drawBoard() {
+        const width = padX * 2 + cellW * COLS + gapX * (COLS - 1);
+        const height = padY * 2 + cellH * ROWS + gapY * (ROWS - 1);
+
+        ctx.clearRect(0, 0, width, height);
+
+        // 1. Lush Green Lawn Background (Matches Image 2!)
+        const grassGrad = ctx.createLinearGradient(0, 0, 0, height);
+        grassGrad.addColorStop(0, '#71bc2b');
+        grassGrad.addColorStop(0.5, '#66b122');
+        grassGrad.addColorStop(1, '#5ca31c');
+        drawRoundedRect(0, 0, width, height, 20);
+        ctx.fillStyle = grassGrad;
+        ctx.fill();
+
+        // Subtle lawn blades
+        ctx.fillStyle = 'rgba(163, 230, 53, 0.35)';
+        for (const bl of state.lawnBlades) {
+          ctx.beginPath();
+          ctx.arc(bl.rx * width, bl.ry * height, bl.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // 2. Yellow-Green Stone/Bamboo Connecting Tracks between the 4x4 Pedestals (Matches Image 2!)
+        const trackThick = Math.max(12, Math.floor(cellW * 0.19));
+
+        // Horizontal tracks
+        for (let r = 0; r < ROWS; r++) {
+          const leftRect = toVisualRect(0, r);
+          const rightRect = toVisualRect(COLS - 1, r);
+          const cy = leftRect.y + cellH / 2;
+          const startX = Math.min(leftRect.x, rightRect.x) + cellW / 2;
+          const endX = Math.max(leftRect.x, rightRect.x) + cellW / 2;
+
+          ctx.fillStyle = '#a3b828';
+          ctx.fillRect(startX, cy - trackThick / 2 - 2, endX - startX, trackThick + 4);
+          ctx.fillStyle = '#d6e35b';
+          ctx.fillRect(startX, cy - trackThick / 2, endX - startX, trackThick);
+        }
+
+        // Vertical tracks
+        for (let c = 0; c < COLS; c++) {
+          const topRect = toVisualRect(c, 0);
+          const botRect = toVisualRect(c, ROWS - 1);
+          const cx = topRect.x + cellW / 2;
+          const startY = Math.min(topRect.y, botRect.y) + cellH / 2;
+          const endY = Math.max(topRect.y, botRect.y) + cellH / 2;
+
+          ctx.fillStyle = '#a3b828';
+          ctx.fillRect(cx - trackThick / 2 - 2, startY, trackThick + 4, endY - startY);
+          ctx.fillStyle = '#d6e35b';
+          ctx.fillRect(cx - trackThick / 2, startY, trackThick, endY - startY);
+        }
+
+        // 3. Draw 16 Pedestal Bases + 3D Blocks / Chibi Animals
+        let slidePieceId = null;
+        let slidePos = null;
+        if (state.slideAnim) {
+          const elapsed = performance.now() - state.slideAnim.startTime;
+          const t = Math.min(1, elapsed / state.slideAnim.duration);
+          const ease = 1 - Math.pow(1 - t, 3);
+          const fromR = toVisualRect(state.slideAnim.fromCol, state.slideAnim.fromRow);
+          const toR = toVisualRect(state.slideAnim.toCol, state.slideAnim.toRow);
+          slidePieceId = state.slideAnim.piece.id;
+          slidePos = {
+            x: fromR.x + (toR.x - fromR.x) * ease,
+            y: fromR.y + (toR.y - fromR.y) * ease
+          };
+          if (t >= 1) state.slideAnim = null;
+        }
+
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            const rect = toVisualRect(c, r);
+
+            // Always draw the 3D cream-olive recessed pedestal first!
+            drawPedestalBase(rect.x, rect.y, rect.w, rect.h);
+
+            const piece = state.board[r][c];
+            if (piece) {
+              if (slidePieceId && piece.id === slidePieceId && slidePos) {
+                continue;
+              }
+
+              let scaleX = 1;
+              let showRevealed = piece.revealed;
+              if (state.flipAnim && state.flipAnim.col === c && state.flipAnim.row === r) {
+                const elapsed = performance.now() - state.flipAnim.startTime;
+                const t = Math.min(1, elapsed / state.flipAnim.duration);
+                if (t < 0.5) {
+                  scaleX = Math.max(0.05, 1 - t * 2);
+                  showRevealed = false;
+                } else {
+                  scaleX = Math.max(0.05, (t - 0.5) * 2);
+                  showRevealed = true;
+                }
+                if (t >= 1) state.flipAnim = null;
+              }
+
+              const isSel = state.selected && state.selected.col === c && state.selected.row === r;
+              const isHint = state.hintMove && (
+                (state.hintMove.col === c && state.hintMove.row === r) ||
+                (state.hintMove.fromCol === c && state.hintMove.fromRow === r)
+              );
+              const isLastTarget = state.lastMove && state.lastMove.toCol === c && state.lastMove.toRow === r;
+
+              if (!showRevealed) {
+                drawChibiMysteryBlock(rect.x, rect.y, rect.w, rect.h, scaleX, isHint);
+              } else {
+                drawChibiRevealedBlock(piece, rect.x, rect.y, rect.w, rect.h, scaleX, isSel || isHint, isLastTarget);
+              }
+            }
+
+            // Keyboard cursor outline
+            if (state.cursor.col === c && state.cursor.row === r) {
+              drawRoundedRect(rect.x - 2, rect.y - 2, rect.w + 4, rect.h + 4, 16);
+              ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+              ctx.lineWidth = 2;
+              ctx.setLineDash([5, 4]);
+              ctx.stroke();
+              ctx.setLineDash([]);
+            }
+          }
+        }
+
+        // 4. Draw Last Move Directional Arrow (like the Red/Blue arrows in Image 2!)
+        if (
+          state.lastMove &&
+          state.lastMove.type === 'move' &&
+          (state.lastMove.fromCol !== state.lastMove.toCol || state.lastMove.fromRow !== state.lastMove.toRow)
+        ) {
+          drawBetweenCellArrow(
+            state.lastMove.fromCol,
+            state.lastMove.fromRow,
+            state.lastMove.toCol,
+            state.lastMove.toRow,
+            state.lastMove.side,
+            null
+          );
+        }
+
+        // 5. Draw sliding piece on top
+        if (state.slideAnim && slidePos) {
+          drawChibiRevealedBlock(state.slideAnim.piece, slidePos.x, slidePos.y, cellW, cellH, 1.05, true, false);
+        }
+
+        // 6. Draw Legal Move Directional Arrows & Action Badges
+        const activeSide = getActiveSide();
+        for (const m of state.legalMoves) {
+          let badge = null;
+          if (m.isCapture) {
+            badge = {
+              text: m.isEndgamePairWin
+                ? '🏆对子胜'
+                : (m.isSuicide ? '💀自杀' : (m.isMutual ? '💥同归' : '⚔️可吃')),
+              bg: m.isEndgamePairWin
+                ? 'rgba(16, 185, 129, 0.95)'
+                : (m.isSuicide ? 'rgba(126, 34, 206, 0.92)' : (m.isMutual ? 'rgba(234, 179, 8, 0.95)' : 'rgba(225, 29, 72, 0.95)'))
+            };
+          }
+          drawBetweenCellArrow(m.fromCol, m.fromRow, m.toCol, m.toRow, activeSide, badge);
+        }
+
+        // 7. Draw Particles
+        for (let i = state.particles.length - 1; i >= 0; i--) {
+          const pt = state.particles[i];
+          const rect = toVisualRect(pt.col, pt.row);
+          const px = rect.x + rect.w / 2 + pt.vx * 8;
+          const py = rect.y + rect.h / 2 + pt.vy * 8;
+          pt.vx *= 1.06;
+          pt.vy *= 1.06;
+          pt.alpha -= 0.045;
+          if (pt.alpha <= 0) {
+            state.particles.splice(i, 1);
+            continue;
+          }
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, pt.alpha);
+          ctx.beginPath();
+          ctx.arc(px, py, pt.radius, 0, Math.PI * 2);
+          ctx.fillStyle = pt.color;
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      // ==========================================
+      // 9. ANIMATION LOOP & EVENT LISTENERS
+      // ==========================================
+      let animFrameId = null;
+      function tick() {
+        drawBoard();
+        animFrameId = requestAnimationFrame(tick);
+      }
+
+      function toggleSound() {
+        sound.enabled = !sound.enabled;
+        const icon = sound.enabled ? '🔊' : '🔇';
+        document.getElementById('soundIcon').textContent = icon;
+        document.getElementById('stageSoundBtn').textContent = icon;
+        document.getElementById('soundLabel').textContent = sound.enabled ? '音效' : '静音';
+        if (sound.enabled) sound.select();
+      }
+
+      function setupEvents() {
+        canvas.addEventListener('click', (e) => {
+          const rect = canvas.getBoundingClientRect();
+          const px = e.clientX - rect.left;
+          const py = e.clientY - rect.top;
+          const cell = fromScreenPoint(px, py);
+          if (cell) {
+            handleCellAction(cell.col, cell.row);
+          }
+        });
+
+        document.getElementById('visualThemeSelect').addEventListener('change', (e) => {
+          state.visualTheme = e.target.value;
+          const badge = document.getElementById('boardRuleBadge');
+          badge.textContent = state.visualTheme === 'chibi3d' ? 'Q版立体萌宠版' : '4×4 翻牌PK版';
+          showToast(`🎨 已切换画风：${e.target.options[e.target.selectedIndex].text}`);
+        });
+
+        document.getElementById('sameRankRuleSelect').addEventListener('change', (e) => {
+          state.sameRankRule = e.target.value;
+          if (state.selected) {
+            const p = state.board[state.selected.row][state.selected.col];
+            state.legalMoves = getLegalMovesForPiece(state.board, p);
+            updateInspector(p);
+          }
+          showToast(`💥 常规同级相碰已设为：${e.target.options[e.target.selectedIndex].text}`);
+        });
+
+        const modePveBtn = document.getElementById('modePveBtn');
+        const modePvpBtn = document.getElementById('modePvpBtn');
+        const aiDiffWrap = document.getElementById('aiDiffWrap');
+        const oppNicknameText = document.getElementById('oppNicknameText');
+
+        modePveBtn.addEventListener('click', () => {
+          state.mode = 'pve';
+          modePveBtn.className = 'btn-action px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-500 text-slate-950 shadow';
+          modePvpBtn.className = 'btn-action px-2.5 py-1 rounded-md text-xs font-semibold text-slate-300 hover:text-white';
+          aiDiffWrap.classList.remove('hidden');
+          oppNicknameText.textContent = 'L.eason';
+          initGame();
+          showToast('🤖 已切换至人机 PK 模式');
+        });
+
+        modePvpBtn.addEventListener('click', () => {
+          state.mode = 'pvp';
+          modePvpBtn.className = 'btn-action px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-500 text-slate-950 shadow';
+          modePveBtn.className = 'btn-action px-2.5 py-1 rounded-md text-xs font-semibold text-slate-300 hover:text-white';
+          aiDiffWrap.classList.add('hidden');
+          oppNicknameText.textContent = '玩家2';
+          initGame();
+          showToast('👥 已切换至双人同屏 PK 模式');
+        });
+
+        document.getElementById('aiDifficultySelect').addEventListener('change', (e) => {
+          state.aiDifficulty = parseInt(e.target.value, 10) || 2;
+          showToast(`🎯 AI 难度已设为：${e.target.options[e.target.selectedIndex].text}`);
+        });
+
+        document.getElementById('soundToggleBtn').addEventListener('click', toggleSound);
+        document.getElementById('stageSoundBtn').addEventListener('click', toggleSound);
+
+        document.getElementById('stageResetBtn').addEventListener('click', () => {
+          sound.select();
+          initGame();
+          showToast('🃏 已重新洗牌开局！请翻开第一张牌定色');
+        });
+
+        const handleDrawOffer = () => {
+          if (state.gameOver || state.aiThinking) return;
+          declareVictory('draw', '双方达成求和协议，本局握手言和！');
+        };
+        const handleSurrender = () => {
+          if (state.gameOver || state.aiThinking) return;
+          const loserRole = state.turnRole;
+          const winnerSide = loserRole === ROLE_SELF
+            ? (state.oppSide || SIDE_BLUE)
+            : (state.selfSide || SIDE_RED);
+          declareVictory(winnerSide, `${loserRole === ROLE_SELF ? '自己' : '对手'}主动认输！`);
+        };
+        document.getElementById('drawOfferBtn').addEventListener('click', handleDrawOffer);
+        document.getElementById('topDrawBtn').addEventListener('click', handleDrawOffer);
+        document.getElementById('surrenderBtn').addEventListener('click', handleSurrender);
+        document.getElementById('topSurrenderBtn').addEventListener('click', handleSurrender);
+
+        document.getElementById('undoBtn').addEventListener('click', () => {
+          if (state.history.length === 0 || state.aiThinking) return;
+          let snap = state.history.pop();
+          if (state.mode === 'pve' && snap.turnRole === ROLE_OPP && state.history.length > 0) {
+            snap = state.history.pop();
+          }
+          state.board = snap.board;
+          state.turnRole = snap.turnRole;
+          state.selfSide = snap.selfSide;
+          state.oppSide = snap.oppSide;
+          state.equal1v1Steps = snap.equal1v1Steps;
+          state.lastMove = snap.lastMove;
+          state.moveLog = snap.moveLog;
+          state.selected = null;
+          state.legalMoves = [];
+          state.hintMove = null;
+          state.gameOver = false;
+          sound.select();
+          startTurnTimer();
+          updateUI();
+          showToast('↩️ 已悔棋');
+        });
+
+        document.getElementById('hintBtn').addEventListener('click', () => {
+          if (state.gameOver || state.aiThinking) return;
+          const best = computeBestAction(state.board, getActiveSide(), 3);
+          if (!best) return;
+          state.hintMove = best;
+          sound.select();
+          if (best.type === 'flip') {
+            showToast(`💡 建议翻开 ${coordLabel(best.col, best.row)} 处的盲盒方块`);
+          } else {
+            const p = state.board[best.fromRow][best.fromCol];
+            state.selected = { col: best.fromCol, row: best.fromRow };
+            state.legalMoves = getLegalMovesForPiece(state.board, p);
+            updateInspector(p);
+            showToast(`💡 推荐：${ANIMALS[p.rank].name} ${coordLabel(best.fromCol, best.fromRow)} → ${coordLabel(best.toCol, best.toRow)}`);
+          }
+        });
+
+        document.getElementById('flipBtn').addEventListener('click', () => {
+          state.flipped = !state.flipped;
+          sound.select();
+          showToast('🔄 已翻转棋盘视角');
+        });
+
+        document.getElementById('restartBtn').addEventListener('click', () => {
+          sound.select();
+          initGame();
+          showToast('⚔️ 新对局开始，请翻开第一张牌决定本局颜色！');
+        });
+
+        document.getElementById('modalPlayAgainBtn').addEventListener('click', () => {
+          sound.select();
+          initGame();
+        });
+
+        document.getElementById('modalReviewBtn').addEventListener('click', () => {
+          document.getElementById('victoryModal').classList.add('hidden');
+        });
+
+        const rulesModal = document.getElementById('rulesModal');
+        document.getElementById('openRulesBtn').addEventListener('click', () => {
+          rulesModal.classList.remove('hidden');
+        });
+        document.getElementById('closeRulesBtn').addEventListener('click', () => {
+          rulesModal.classList.add('hidden');
+        });
+        document.getElementById('gotItRulesBtn').addEventListener('click', () => {
+          rulesModal.classList.add('hidden');
+        });
+
+        document.getElementById('padUpBtn').addEventListener('click', () => moveCursor(0, -1));
+        document.getElementById('padDownBtn').addEventListener('click', () => moveCursor(0, 1));
+        document.getElementById('padLeftBtn').addEventListener('click', () => moveCursor(-1, 0));
+        document.getElementById('padRightBtn').addEventListener('click', () => moveCursor(1, 0));
+        document.getElementById('padSelectBtn').addEventListener('click', () => {
+          handleCellAction(state.cursor.col, state.cursor.row);
+        });
+
+        window.addEventListener('keydown', (e) => {
+          if (!rulesModal.classList.contains('hidden')) {
+            if (e.key === 'Escape') rulesModal.classList.add('hidden');
+            return;
+          }
+          switch (e.key) {
+            case 'ArrowUp':
+            case 'w':
+            case 'W':
+              e.preventDefault();
+              moveCursor(0, -1);
+              break;
+            case 'ArrowDown':
+            case 's':
+            case 'S':
+              e.preventDefault();
+              moveCursor(0, 1);
+              break;
+            case 'ArrowLeft':
+            case 'a':
+            case 'A':
+              e.preventDefault();
+              moveCursor(-1, 0);
+              break;
+            case 'ArrowRight':
+            case 'd':
+            case 'D':
+              e.preventDefault();
+              moveCursor(1, 0);
+              break;
+            case 'Enter':
+            case ' ':
+              e.preventDefault();
+              handleCellAction(state.cursor.col, state.cursor.row);
+              break;
+          }
+        });
+
+        window.addEventListener('resize', resizeCanvas);
+      }
+
+      window.onload = function () {
+        renderChainBarAndStrip();
+        initGame();
+        setupEvents();
+        resizeCanvas();
+        if (animFrameId) cancelAnimationFrame(animFrameId);
+        animFrameId = requestAnimationFrame(tick);
+      };
+    })();
+  </script>
+</body>
+</html>
