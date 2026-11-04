@@ -114,6 +114,33 @@
       color: #ffffff;
       text-shadow: 0 1px 2px rgba(120, 53, 15, 0.8);
     }
+    /* Fullscreen Mode for Main Game Stage */
+    body.is-stage-fullscreen {
+      overflow: hidden;
+    }
+    #boardContainer.stage-fullscreen {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 45 !important;
+      max-width: 100vw !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      background: radial-gradient(circle at 50% 20%, #1e293b 0%, #090d16 100%);
+      padding: 8px 12px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: center !important;
+      align-items: center !important;
+      overflow-y: auto !important;
+    }
+    #boardContainer.stage-fullscreen #canvasHost {
+      max-width: 540px;
+      width: 100%;
+    }
+    #boardContainer.stage-fullscreen .fullscreen-toolbar {
+      max-width: 540px;
+      width: 100%;
+    }
   </style>
 </head>
 <body class="flex flex-col min-h-screen">
@@ -218,22 +245,28 @@
           </div>
         </div>
 
-        <!-- Compact Player Avatars & Camp Status -->
-        <div class="mt-2.5 p-2 rounded-xl bg-slate-900/65 border border-slate-800 flex items-center justify-between">
+        <!-- Compact Player Avatars, Camp Status & Cumulative Scoreboard -->
+        <div class="mt-2.5 p-2.5 rounded-xl bg-slate-900/65 border border-slate-800 flex items-center justify-between">
           <div class="flex items-center gap-2">
             <div id="selfAvatarRing" class="w-8 h-8 rounded-full p-0.5 bg-gradient-to-b from-amber-300 to-amber-600 ring-2 ring-amber-300 flex items-center justify-center text-sm">
               🧒
             </div>
             <div>
               <div class="text-xs font-bold text-white leading-tight">自己 <span class="text-[10px] text-slate-400 font-normal">兔兔兔兔*</span></div>
-              <span id="selfSideBadge" class="text-[10px] font-bold text-amber-300">自己·待定</span>
+              <div class="flex items-center gap-1.5 mt-0.5">
+                <span id="selfSideBadge" class="text-[10px] font-bold text-amber-300">自己·待定</span>
+                <span class="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-mono font-bold border border-amber-400/30">🏅 <span id="selfTotalScoreText">0</span>分</span>
+              </div>
             </div>
           </div>
           <span class="text-xs font-black italic text-amber-400">VS</span>
           <div class="flex items-center gap-2 text-right">
             <div>
               <div id="oppNicknameText" class="text-xs font-bold text-white leading-tight">L.eason</div>
-              <span id="oppSideBadge" class="text-[10px] font-bold text-slate-400">对手·待定</span>
+              <div class="flex items-center justify-end gap-1.5 mt-0.5">
+                <span class="text-[10px] px-1.5 py-0.2 rounded bg-sky-500/20 text-sky-300 font-mono font-bold border border-sky-400/30">🏅 <span id="oppTotalScoreText">0</span>分</span>
+                <span id="oppSideBadge" class="text-[10px] font-bold text-slate-400">对手·待定</span>
+              </div>
             </div>
             <div id="oppAvatarRing" class="w-8 h-8 rounded-full p-0.5 bg-gradient-to-b from-slate-300 to-slate-600 flex items-center justify-center text-sm">
               👦
@@ -363,6 +396,9 @@
               <button id="surrenderBtn" type="button" class="btn-action px-2.5 py-1 rounded-full bg-white/85 hover:bg-white text-rose-800 font-bold shadow text-[11px]">
                 🏳️ 认输
               </button>
+              <button id="stageFullscreenBtn" type="button" title="全屏/退出全屏" class="btn-action px-2 py-1 rounded-full bg-amber-400/90 hover:bg-amber-300 text-slate-950 font-extrabold shadow text-[11px] flex items-center gap-0.5">
+                <span id="stageFsIcon">⛶</span> <span id="stageFsText">全屏</span>
+              </button>
               <button id="stageSoundBtn" type="button" title="切换音效" class="btn-action w-7 h-7 rounded-full bg-black/25 hover:bg-black/35 text-white font-bold flex items-center justify-center">
                 🔊
               </button>
@@ -371,17 +407,20 @@
         </div>
 
         <!-- Action Toolbar Under Board -->
-        <div class="w-full mt-3 grid grid-cols-4 gap-2">
-          <button id="undoBtn" type="button" class="btn-action py-2 px-3 rounded-xl glass-panel hover:bg-slate-800 text-xs sm:text-sm font-semibold text-slate-200 flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed">
+        <div class="fullscreen-toolbar w-full mt-3 grid grid-cols-5 gap-1.5 sm:gap-2">
+          <button id="undoBtn" type="button" class="btn-action py-2 px-2 rounded-xl glass-panel hover:bg-slate-800 text-xs sm:text-sm font-semibold text-slate-200 flex items-center justify-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed">
             <span>↩️</span> <span>悔棋</span>
           </button>
-          <button id="hintBtn" type="button" class="btn-action py-2 px-3 rounded-xl glass-panel hover:bg-slate-800 text-xs sm:text-sm font-semibold text-amber-300 flex items-center justify-center gap-1.5 disabled:opacity-40">
+          <button id="hintBtn" type="button" class="btn-action py-2 px-2 rounded-xl glass-panel hover:bg-slate-800 text-xs sm:text-sm font-semibold text-amber-300 flex items-center justify-center gap-1 disabled:opacity-40">
             <span>💡</span> <span>AI提示</span>
           </button>
-          <button id="flipBtn" type="button" class="btn-action py-2 px-3 rounded-xl glass-panel hover:bg-slate-800 text-xs sm:text-sm font-semibold text-sky-300 flex items-center justify-center gap-1.5">
+          <button id="flipBtn" type="button" class="btn-action py-2 px-2 rounded-xl glass-panel hover:bg-slate-800 text-xs sm:text-sm font-semibold text-sky-300 flex items-center justify-center gap-1">
             <span>🔄</span> <span>翻转棋盘</span>
           </button>
-          <button id="restartBtn" type="button" class="btn-action py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs sm:text-sm font-bold shadow-lg shadow-amber-500/20 flex items-center justify-center gap-1.5">
+          <button id="fullscreenToolbarBtn" type="button" class="btn-action py-2 px-2 rounded-xl glass-panel hover:bg-slate-800 text-xs sm:text-sm font-semibold text-lime-300 flex items-center justify-center gap-1">
+            <span id="toolbarFsIcon">⛶</span> <span id="toolbarFsText">全屏</span>
+          </button>
+          <button id="restartBtn" type="button" class="btn-action py-2 px-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs sm:text-sm font-bold shadow-lg shadow-amber-500/20 flex items-center justify-center gap-1">
             <span>⚔️</span> <span>新对局</span>
           </button>
         </div>
@@ -447,7 +486,7 @@
       <h2 id="victoryTitle" class="serif-title text-2xl font-black text-amber-200 mb-1">自己获胜！</h2>
       <p id="victoryReason" class="text-sm text-slate-300 mb-5">成功消灭对手全部猛兽，赢得森林霸主之位！</p>
 
-      <div class="grid grid-cols-3 gap-2 mb-5 p-3 rounded-2xl bg-slate-900/80 border border-slate-800 text-xs">
+      <div class="grid grid-cols-3 gap-2 mb-3 p-3 rounded-2xl bg-slate-900/80 border border-slate-800 text-xs">
         <div>
           <div class="text-slate-400">总回合数</div>
           <div id="statTotalMoves" class="text-base font-bold text-amber-300 mt-0.5">24</div>
@@ -462,12 +501,49 @@
         </div>
       </div>
 
-      <div class="flex gap-2.5 justify-center">
-        <button id="modalReviewBtn" type="button" class="btn-action flex-1 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold border border-slate-700">
+      <!-- Match Score Reward Breakdown Card -->
+      <div id="victoryScoreCard" class="mb-5 p-3.5 rounded-2xl bg-gradient-to-br from-amber-500/20 via-orange-500/15 to-slate-900/90 border border-amber-400/40 text-left">
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="text-xs font-bold text-amber-200 flex items-center gap-1">🏅 本局胜方积分奖励</span>
+          <span id="statMatchScoreTotal" class="text-lg font-black text-amber-300">+0 分</span>
+        </div>
+        <div id="statMatchScoreDetail" class="text-[11px] text-slate-300 leading-relaxed">
+          平局无积分加成
+        </div>
+        <div class="mt-2 pt-2 border-t border-slate-700/70 flex items-center justify-between text-[11px] text-slate-400">
+          <span>自己累计：<strong id="modalSelfTotalScore" class="text-amber-300">0 分</strong></span>
+          <span>对手累计：<strong id="modalOppTotalScore" class="text-sky-300">0 分</strong></span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-2 justify-center">
+        <button id="modalReviewBtn" type="button" class="btn-action py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-semibold border border-slate-700">
           查看终局棋盘
         </button>
-        <button id="modalPlayAgainBtn" type="button" class="btn-action flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-sm font-bold shadow-lg">
+        <button id="modalPlayAgainBtn" type="button" class="btn-action py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs sm:text-sm font-bold shadow-lg">
           再来一局
+        </button>
+        <button id="modalExitBtn" type="button" class="btn-action py-2.5 px-3 rounded-xl bg-rose-600/90 hover:bg-rose-500 text-white text-xs sm:text-sm font-bold border border-rose-400/40 shadow-lg">
+          🚪 退出
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exited Game Home / Standby Overlay -->
+  <div id="exitLobbyModal" class="hidden fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel max-w-sm w-full rounded-3xl p-7 border border-lime-400/35 shadow-2xl text-center">
+      <div class="w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-lime-400 to-green-600 flex items-center justify-center text-4xl shadow-lg shadow-lime-500/25">
+        🐘
+      </div>
+      <h2 class="serif-title text-2xl font-black text-amber-200 mb-1">Q版萌宠翻牌斗兽棋</h2>
+      <p class="text-xs text-slate-400 mb-6">您已退出当前对局。可随时关闭页面，或点击下方按钮重新开始。</p>
+      <div class="space-y-2.5">
+        <button id="lobbyResumeNewBtn" type="button" class="btn-action w-full py-3 px-5 rounded-xl bg-gradient-to-r from-lime-400 to-emerald-500 hover:from-lime-300 hover:to-emerald-400 text-slate-950 font-extrabold text-sm shadow-lg">
+          🎮 重新进入游戏 (新对局)
+        </button>
+        <button id="lobbyBackBoardBtn" type="button" class="btn-action w-full py-2.5 px-5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs border border-slate-700">
+          返回查看刚才的棋盘
         </button>
       </div>
     </div>
@@ -490,9 +566,11 @@
         <div class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-1.5">
           <h3 class="font-bold text-amber-300">🎯 核心三大规则</h3>
           <p>1. <strong>首翻定色：</strong>开局由“自己”先手翻牌，<strong>自己第一次翻出方块的颜色（红或蓝）即成为本局自己的专属阵营</strong>（顶部中央徽章会同步显示“我是红方”或“我是蓝方”）。</p>
-          <p>2. <strong>单挑残局（最后各剩1张 · 同级）：</strong>当双方<strong>最后各剩一张牌且等级相同时</strong>，<strong>谁能主动发起对子（主动撞向对方同级牌）谁直接获胜</strong>；若均无法主动对子则判为<strong>和棋</strong>。</p>
-          <p>3. <strong>单挑残局（最后各剩1张 · 不同级）：</strong>当双方<strong>最后各剩一张牌且大小不同时</strong>，<strong>无需再走牌，牌面更大（或鼠克象）的一方直接获胜</strong>！</p>
-          <p>4. <strong>弱者撞强者自杀机制：</strong>当己方<strong>弱小棋子相邻敌方强大棋子</strong>（例如猫碰虎、象碰鼠等）时，<strong>允许主动撞向强者采取「自杀」形式自我灭亡</strong>（可用于战术送子触发1v1残局直接获胜或腾出关键路线）！</p>
+          <p>2. <strong>全部翻牌后 · 各剩一张：</strong>全部翻牌后，若双方<strong>各剩一张牌</strong>，<strong>直接比大小决定胜负</strong>（大牌或鼠克象直接获胜；若同级则主动对子者胜，各走10步无对子判为和棋）。</p>
+          <p>3. <strong>全部翻牌后 · 各走十步无吃子/兑子判和：</strong>全部翻牌后，若双方<strong>各走十步（共20手）没有发生吃子或兑子</strong>，则自动判为<strong>和棋</strong>！</p>
+          <p>4. <strong>弱者撞强者自杀机制：</strong>当己方<strong>弱小棋子相邻敌方强大棋子</strong>（例如猫碰虎、象碰鼠等）时，<strong>允许主动撞向强者采取「自杀」形式自我灭亡</strong>！</p>
+          <p>5. <strong>未翻完牌前 · 禁止连续紧逼3次（长捉禁手）：</strong>在棋子尚未全部翻完前，若一方重复走子躲避，另一方<strong>不能连续紧逼（追捉威胁）达 3 次</strong>，否则直接判<strong>紧逼方犯规认输</strong>！</p>
+          <p>6. <strong>胜局积分奖励规则：</strong>获胜方按剩余存活棋子结算积分——<strong>每剩 1 张牌基础 +10 分</strong>；额外加分：<strong>剩大象 +10 分、剩狮子 +5 分、剩老虎 +3 分、剩老鼠 +20 分</strong>！</p>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -538,7 +616,7 @@
       const ROLE_SELF = 'self';
       const ROLE_OPP = 'opp';
       const TURN_SECONDS = 30;
-      const MAX_1V1_EQUAL_STEPS = 10;
+      const MAX_1V1_EQUAL_STEPS = 20;
 
       const ANIMALS = {
         8: { rank: 8, name: '象', title: '星帽萌象', emoji: '🐘', skill: '陆地霸主，可吃除鼠外一切明牌，但被灵鼠克制！' },
@@ -658,6 +736,13 @@
         history: [],
         moveLog: [],
         equal1v1Steps: 0,
+        noCapturePliesAfterAllFlipped: 0,
+        chaseTracker: { red: 0, blue: 0 }, // consecutive chase count while unflipped > 0
+        recentMovesByRole: { self: [], opp: [] }, // recent move history per role for repetition & chase detection
+        selfTotalScore: 0,
+        oppTotalScore: 0,
+        lastScoreBreakdown: null,
+        isFullscreen: false,
         gameOver: false,
         winnerRole: null,
         winnerSide: null,
@@ -745,6 +830,68 @@
         return { redPieces, bluePieces, unflipped };
       }
 
+      // Check if `mover` at (toCol, toRow) is threatening (can capture) any adjacent revealed enemy piece on `board`
+      function getThreatenedPreyIds(board, mover, toCol, toRow) {
+        const preyIds = [];
+        const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+        for (const [dc, dr] of dirs) {
+          const nc = toCol + dc;
+          const nr = toRow + dr;
+          if (nc >= 0 && nc < COLS && nr >= 0 && nr < ROWS) {
+            const adj = board[nr][nc];
+            if (adj && adj.revealed && adj.side !== mover.side) {
+              const out = getAttackOutcome(board, mover, adj);
+              if (out === 'win' || out === 'endgame_pair_win') {
+                preyIds.push(adj.id);
+              }
+            }
+          }
+        }
+        return preyIds;
+      }
+
+      // Calculate victory score according to user formula:
+      // 每剩1张给10分，剩大象(8)额外+10分，剩狮子(7)额外+5分，剩老虎(6)额外+3分，剩老鼠(1)额外+20分
+      function calculateVictoryScore(board, winnerSide) {
+        if (!winnerSide || winnerSide === 'draw') {
+          return { total: 0, baseScore: 0, count: 0, bonusItems: [], summaryText: '平局无积分加成' };
+        }
+        const { redPieces, bluePieces } = countRemainingPieces(board);
+        const winPieces = winnerSide === SIDE_RED ? redPieces : bluePieces;
+        const count = winPieces.length;
+        const baseScore = count * 10;
+        let bonusTotal = 0;
+        const bonusItems = [];
+
+        const BONUS_MAP = {
+          8: { name: '大象', emoji: '🐘', pts: 10 },
+          7: { name: '狮子', emoji: '🦁', pts: 5 },
+          6: { name: '老虎', emoji: '🐯', pts: 3 },
+          1: { name: '老鼠', emoji: '🐭', pts: 20 }
+        };
+
+        // Sort descending by rank for clean display
+        const sorted = winPieces.slice().sort((a, b) => b.rank - a.rank);
+        for (const p of sorted) {
+          if (BONUS_MAP[p.rank]) {
+            const b = BONUS_MAP[p.rank];
+            bonusTotal += b.pts;
+            bonusItems.push(`${b.emoji}剩${b.name} +${b.pts}分`);
+          }
+        }
+
+        const total = baseScore + bonusTotal;
+        const baseText = `剩余 ${count} 张牌 (+${baseScore}分)`;
+        const bonusText = bonusItems.length > 0 ? `，额外加成：${bonusItems.join('、')}` : '，无特殊猛兽额外加成';
+        return {
+          total,
+          baseScore,
+          count,
+          bonusItems,
+          summaryText: `${baseText}${bonusText}`
+        };
+      }
+
       function compareDifferentPieceRanks(pA, pB) {
         if (pA.rank === pB.rank) return null;
         if (pA.rank === 1 && pB.rank === 8) return pA.side;
@@ -812,6 +959,10 @@
         state.history = [];
         state.moveLog = [];
         state.equal1v1Steps = 0;
+        state.noCapturePliesAfterAllFlipped = 0;
+        state.chaseTracker = { red: 0, blue: 0 };
+        state.recentMovesByRole = { self: [], opp: [] };
+        state.lastScoreBreakdown = null;
         state.gameOver = false;
         state.winnerRole = null;
         state.winnerSide = null;
@@ -1350,6 +1501,22 @@
             actionScore = evaluateFlipAction(board, act, side);
           }
 
+          // Prevent AI from committing a 3rd consecutive chase foul while unflipped cards remain!
+          const { unflipped: currUnflipped } = countRemainingPieces(board);
+          if (currUnflipped > 0 && act.type === 'move' && !act.isCapture) {
+            const mover = board[act.fromRow][act.fromCol];
+            const nextB = simulateMoveOnBoard(board, act);
+            const threatenedPrey = getThreatenedPreyIds(nextB, mover, act.toCol, act.toRow);
+            const isBackAndForth = state.recentMovesByRole.opp.length > 0 &&
+              state.recentMovesByRole.opp[state.recentMovesByRole.opp.length - 1].pieceId === mover.id &&
+              state.recentMovesByRole.opp[state.recentMovesByRole.opp.length - 1].fromCol === act.toCol &&
+              state.recentMovesByRole.opp[state.recentMovesByRole.opp.length - 1].fromRow === act.toRow;
+            if ((threatenedPrey.length > 0 || isBackAndForth) && (state.chaseTracker[side] || 0) >= 2) {
+              // Avoid 3rd consecutive chase foul!
+              actionScore -= 500000;
+            }
+          }
+
           const noise = difficulty === 1
             ? (Math.random() * 260 - 130)
             : (difficulty === 2 ? (Math.random() * 28 - 14) : (Math.random() * 4 - 2));
@@ -1389,6 +1556,12 @@
           selfSide: state.selfSide,
           oppSide: state.oppSide,
           equal1v1Steps: state.equal1v1Steps,
+          noCapturePliesAfterAllFlipped: state.noCapturePliesAfterAllFlipped,
+          chaseTracker: { ...state.chaseTracker },
+          recentMovesByRole: {
+            self: state.recentMovesByRole.self.map(m => ({ ...m })),
+            opp: state.recentMovesByRole.opp.map(m => ({ ...m }))
+          },
           lastMove: state.lastMove ? { ...state.lastMove } : null,
           moveLog: [...state.moveLog]
         });
@@ -1540,6 +1713,60 @@
             updateInspector(movingPiece);
           }
 
+          const { unflipped } = countRemainingPieces(state.board);
+          if (targetPiece) {
+            state.noCapturePliesAfterAllFlipped = 0;
+            state.chaseTracker = { red: 0, blue: 0 };
+            state.recentMovesByRole = { self: [], opp: [] };
+          } else if (unflipped === 0) {
+            state.noCapturePliesAfterAllFlipped++;
+            state.chaseTracker = { red: 0, blue: 0 };
+          } else {
+            // Unflipped > 0: Check continuous chasing / repetition rule!
+            // "在未完全翻完棋子前，若玩家1重复步骤3次，玩家2则不能连续紧逼3次，否则犯规认输"
+            const roleList = state.recentMovesByRole[actorRole];
+            const prevMove = roleList.length > 0 ? roleList[roleList.length - 1] : null;
+            const isRepeatingStep = prevMove &&
+              prevMove.pieceId === movingPiece.id &&
+              prevMove.fromCol === action.toCol &&
+              prevMove.fromRow === action.toRow;
+
+            const threatenedPreyIds = getThreatenedPreyIds(state.board, movingPiece, action.toCol, action.toRow);
+            const isChasingMove = threatenedPreyIds.length > 0;
+
+            roleList.push({
+              pieceId: movingPiece.id,
+              fromCol: action.fromCol,
+              fromRow: action.fromRow,
+              toCol: action.toCol,
+              toRow: action.toRow,
+              isRepeatingStep,
+              isChasingMove
+            });
+
+            const otherRole = actorRole === ROLE_SELF ? ROLE_OPP : ROLE_SELF;
+            const otherList = state.recentMovesByRole[otherRole];
+            const otherLastMove = otherList.length > 0 ? otherList[otherList.length - 1] : null;
+
+            // A player is "紧逼 (pressing/chasing)" if their move directly threatens an enemy piece,
+            // OR if the opponent just made a repeating step and this player also responds with a repeating step!
+            if (isChasingMove || (isRepeatingStep && otherLastMove && otherLastMove.isRepeatingStep)) {
+              state.chaseTracker[actorSide] = (state.chaseTracker[actorSide] || 0) + 1;
+              if (state.chaseTracker[actorSide] === 2) {
+                showToast(`⚠️ 警告：${roleText}已连续紧逼 2 次，未翻完牌前连续紧逼 3 次将直接判犯规认输！`);
+              } else if (state.chaseTracker[actorSide] >= 3) {
+                const winnerSide = actorSide === SIDE_RED ? SIDE_BLUE : SIDE_RED;
+                endedByDirectPairWin = true;
+                declareVictory(
+                  winnerSide,
+                  `未完全翻完棋子前，${roleText}（${actorSide === SIDE_RED ? '红方' : '蓝方'}）连续紧逼达 3 次，判犯规认输！`
+                );
+              }
+            } else {
+              state.chaseTracker[actorSide] = 0;
+            }
+          }
+
           state.lastMove = {
             type: 'move',
             side: actorSide,
@@ -1548,6 +1775,11 @@
             toCol: action.toCol,
             toRow: action.toRow
           };
+        } else {
+          // On a flip action, reset no-capture and chase counters
+          state.noCapturePliesAfterAllFlipped = 0;
+          state.chaseTracker = { red: 0, blue: 0 };
+          state.recentMovesByRole = { self: [], opp: [] };
         }
 
         if (!endedByDirectPairWin) {
@@ -1579,12 +1811,12 @@
       }
 
       function checkGameEnd(nextTurnRole) {
-        const { redPieces, bluePieces } = countRemainingPieces(state.board);
+        const { redPieces, bluePieces, unflipped } = countRemainingPieces(state.board);
         const redCount = redPieces.length;
         const blueCount = bluePieces.length;
 
         if (redCount === 0 && blueCount === 0) {
-          declareVictory('draw', '双方猛兽全部同归于尽，本局和棋！');
+          declareVictory('draw', '双方猛兽全部同归于尽，本局平局！');
           return;
         }
         if (blueCount === 0) {
@@ -1598,54 +1830,56 @@
           return;
         }
 
-        // SPECIAL 1v1 ENDGAME ADJUDICATION (Rule 2 & Rule 3)
-        if (redCount === 1 && blueCount === 1) {
+        // RULE 3A: 全部翻牌后（或最后各剩一张明牌），若剩各一张，直接比大小决定胜负！
+        if (unflipped === 0 && redCount === 1 && blueCount === 1) {
           const rPiece = redPieces[0];
           const bPiece = bluePieces[0];
 
-          if (rPiece.revealed && bPiece.revealed) {
-            if (rPiece.rank !== bPiece.rank) {
-              // RULE 3: 最后各剩一张牌时，谁大则直接谁胜，无需再走牌！
-              const winningSide = compareDifferentPieceRanks(rPiece, bPiece);
-              const winPiece = winningSide === SIDE_RED ? rPiece : bPiece;
-              const losePiece = winningSide === SIDE_RED ? bPiece : rPiece;
-              const winInfo = ANIMALS[winPiece.rank];
-              const loseInfo = ANIMALS[losePiece.rank];
-              const winRoleName = getRoleForSide(winningSide) === ROLE_SELF ? '自己' : '对手';
-              const winColorName = winningSide === SIDE_RED ? '红方' : '蓝方';
+          if (rPiece.rank !== bPiece.rank) {
+            const winningSide = compareDifferentPieceRanks(rPiece, bPiece);
+            const winPiece = winningSide === SIDE_RED ? rPiece : bPiece;
+            const losePiece = winningSide === SIDE_RED ? bPiece : rPiece;
+            const winInfo = ANIMALS[winPiece.rank];
+            const loseInfo = ANIMALS[losePiece.rank];
+            const winRoleName = getRoleForSide(winningSide) === ROLE_SELF ? '自己' : '对手';
+            const winColorName = winningSide === SIDE_RED ? '红方' : '蓝方';
 
-              spawnParticles(winPiece.col, winPiece.row, '#facc15', 26);
-              declareVictory(
-                winningSide,
-                `最后各剩一张牌：${winRoleName}（${winColorName}）【${winInfo.emoji}${winInfo.name}】压制【${loseInfo.emoji}${loseInfo.name}】，无需再走牌，直接获胜！`
-              );
-              return;
-            }
-
-            // RULE 2: 最后各剩一张牌时如相同，谁能主动对子，谁胜，否则和棋！
-            const dist = Math.abs(rPiece.col - bPiece.col) + Math.abs(rPiece.row - bPiece.row);
-            const sameInfo = ANIMALS[rPiece.rank];
-            state.equal1v1Steps++;
-
-            if (dist === 1) {
-              const nextName = nextTurnRole === ROLE_SELF ? '自己' : '对手';
-              showToast(`⚡ 最后同级【${sameInfo.name}】相邻！轮到${nextName}主动对子决胜！`);
-              return;
-            }
-
-            if (state.equal1v1Steps >= MAX_1V1_EQUAL_STEPS) {
-              declareVictory(
-                'draw',
-                `最后各剩一张同级【${sameInfo.emoji}${sameInfo.name}】，双方均无法完成主动对子，本局判为和棋！`
-              );
-              return;
-            } else {
-              const remain = MAX_1V1_EQUAL_STEPS - state.equal1v1Steps;
-              showToast(`⚡ 同级【${sameInfo.name}】残局：主动对子者胜（${remain}步内未对子判和）`);
-            }
+            spawnParticles(winPiece.col, winPiece.row, '#facc15', 26);
+            declareVictory(
+              winningSide,
+              `全部翻牌后各剩一张牌：${winRoleName}（${winColorName}）【${winInfo.emoji}${winInfo.name}】大于【${loseInfo.emoji}${loseInfo.name}】，直接获胜！`
+            );
+            return;
           }
-        } else {
-          state.equal1v1Steps = 0;
+
+          // 若各剩一张且同级：谁能主动对子谁胜，各走十步（20手）未对子则为和棋
+          const dist = Math.abs(rPiece.col - bPiece.col) + Math.abs(rPiece.row - bPiece.row);
+          const sameInfo = ANIMALS[rPiece.rank];
+          if (dist === 1) {
+            const nextName = nextTurnRole === ROLE_SELF ? '自己' : '对手';
+            showToast(`⚡ 最后同级【${sameInfo.name}】相邻！轮到${nextName}主动对子决胜！`);
+          }
+          if (state.noCapturePliesAfterAllFlipped >= 20) {
+            declareVictory(
+              'draw',
+              `全部翻牌后各剩一张同级【${sameInfo.emoji}${sameInfo.name}】，双方各走满 10 步（共 20 手）均无吃子或兑子，判为和棋！`
+            );
+            return;
+          }
+        }
+
+        // RULE 3B: 全部翻牌后，若多张，各走十步（共20手）没有吃子或兑子，则为和棋！
+        if (unflipped === 0 && (redCount > 1 || blueCount > 1)) {
+          if (state.noCapturePliesAfterAllFlipped >= 20) {
+            declareVictory(
+              'draw',
+              '全部翻牌后，双方各走满 10 步（共 20 手）没有吃子或兑子，本局判为和棋！'
+            );
+            return;
+          } else if (state.noCapturePliesAfterAllFlipped > 0) {
+            const remainPlies = 20 - state.noCapturePliesAfterAllFlipped;
+            showToast(`⏱️ 已全部翻开：无吃子/兑子还剩 ${remainPlies} 手（各走10步共20手）判和`);
+          }
         }
 
         const nextSide = nextTurnRole === ROLE_SELF ? state.selfSide : state.oppSide;
@@ -1675,11 +1909,33 @@
           }
         }
 
+        // Calculate victory score reward!
+        const scoreInfo = calculateVictoryScore(state.board, winnerSide);
+        state.lastScoreBreakdown = scoreInfo;
+        if (winnerSide !== 'draw') {
+          if (state.winnerRole === ROLE_SELF) {
+            state.selfTotalScore += scoreInfo.total;
+          } else if (state.winnerRole === ROLE_OPP) {
+            state.oppTotalScore += scoreInfo.total;
+          }
+          try {
+            localStorage.setItem('doushouqi_self_score', String(state.selfTotalScore));
+            localStorage.setItem('doushouqi_opp_score', String(state.oppTotalScore));
+          } catch (e) {}
+        }
+
+        document.getElementById('selfTotalScoreText').textContent = String(state.selfTotalScore);
+        document.getElementById('oppTotalScoreText').textContent = String(state.oppTotalScore);
+        document.getElementById('modalSelfTotalScore').textContent = `${state.selfTotalScore} 分`;
+        document.getElementById('modalOppTotalScore').textContent = `${state.oppTotalScore} 分`;
+        document.getElementById('statMatchScoreTotal').textContent = `+${scoreInfo.total} 分`;
+        document.getElementById('statMatchScoreDetail').textContent = scoreInfo.summaryText;
+
         const emojiEl = document.getElementById('victoryEmoji');
         const titleEl = document.getElementById('victoryTitle');
         if (winnerSide === 'draw') {
           emojiEl.textContent = '🤝';
-          titleEl.textContent = '旗鼓相当 · 和棋！';
+          titleEl.textContent = '旗鼓相当 · 平局！';
         } else {
           const colorName = winnerSide === SIDE_RED ? '红方' : '蓝方';
           if (state.winnerRole === ROLE_SELF) {
@@ -2030,7 +2286,9 @@
         const redAliveRanks = redPieces.map(p => p.rank);
         const blueAliveRanks = bluePieces.map(p => p.rank);
 
-        document.getElementById('unflippedCountBadge').textContent = `${unflipped} 张`;
+        document.getElementById('unflippedCountBadge').textContent = unflipped > 0
+          ? `${unflipped} 张`
+          : `0 张 (无吃子 ${state.noCapturePliesAfterAllFlipped}/20 手判和)`;
         document.getElementById('redAliveCount').textContent = `${redAliveRanks.length}只`;
         document.getElementById('blueAliveCount').textContent = `${blueAliveRanks.length}只`;
 
@@ -2084,7 +2342,10 @@
 
       function resizeCanvas() {
         const host = document.getElementById('canvasHost');
-        const availW = Math.min(436, host.clientWidth - 16);
+        const maxBoardW = state.isFullscreen
+          ? Math.min(500, window.innerWidth - 28, Math.floor((window.innerHeight - 210) * 0.92))
+          : 436;
+        const availW = Math.max(250, Math.min(maxBoardW, host.clientWidth - 16));
         gapX = Math.max(12, Math.floor(availW * 0.045));
         gapY = Math.max(14, Math.floor(availW * 0.052));
         padX = Math.max(10, Math.floor(availW * 0.03));
@@ -3125,6 +3386,14 @@
           state.selfSide = snap.selfSide;
           state.oppSide = snap.oppSide;
           state.equal1v1Steps = snap.equal1v1Steps;
+          state.noCapturePliesAfterAllFlipped = snap.noCapturePliesAfterAllFlipped || 0;
+          state.chaseTracker = snap.chaseTracker ? { ...snap.chaseTracker } : { red: 0, blue: 0 };
+          state.recentMovesByRole = snap.recentMovesByRole
+            ? {
+                self: snap.recentMovesByRole.self.map(m => ({ ...m })),
+                opp: snap.recentMovesByRole.opp.map(m => ({ ...m }))
+              }
+            : { self: [], opp: [] };
           state.lastMove = snap.lastMove;
           state.moveLog = snap.moveLog;
           state.selected = null;
@@ -3166,6 +3435,43 @@
           showToast('⚔️ 新对局开始，请翻开第一张牌决定本局颜色！');
         });
 
+        function setFullscreenState(enable) {
+          state.isFullscreen = enable;
+          const boardContainer = document.getElementById('boardContainer');
+          if (enable) {
+            document.body.classList.add('is-stage-fullscreen');
+            boardContainer.classList.add('stage-fullscreen');
+            try {
+              if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(() => {});
+              }
+            } catch (e) {}
+          } else {
+            document.body.classList.remove('is-stage-fullscreen');
+            boardContainer.classList.remove('stage-fullscreen');
+            try {
+              if (document.fullscreenElement && document.exitFullscreen) {
+                document.exitFullscreen().catch(() => {});
+              }
+            } catch (e) {}
+          }
+          const icon = enable ? '🗗' : '⛶';
+          const label = enable ? '退出全屏' : '全屏';
+          document.getElementById('stageFsIcon').textContent = icon;
+          document.getElementById('stageFsText').textContent = label;
+          document.getElementById('toolbarFsIcon').textContent = icon;
+          document.getElementById('toolbarFsText').textContent = label;
+          setTimeout(resizeCanvas, 50);
+        }
+
+        const toggleFullscreen = () => {
+          sound.select();
+          setFullscreenState(!state.isFullscreen);
+        };
+
+        document.getElementById('stageFullscreenBtn').addEventListener('click', toggleFullscreen);
+        document.getElementById('fullscreenToolbarBtn').addEventListener('click', toggleFullscreen);
+
         document.getElementById('modalPlayAgainBtn').addEventListener('click', () => {
           sound.select();
           initGame();
@@ -3173,6 +3479,29 @@
 
         document.getElementById('modalReviewBtn').addEventListener('click', () => {
           document.getElementById('victoryModal').classList.add('hidden');
+        });
+
+        document.getElementById('modalExitBtn').addEventListener('click', () => {
+          sound.select();
+          if (state.isFullscreen) {
+            setFullscreenState(false);
+          }
+          document.getElementById('victoryModal').classList.add('hidden');
+          document.getElementById('exitLobbyModal').classList.remove('hidden');
+          try {
+            window.close();
+          } catch (e) {}
+        });
+
+        document.getElementById('lobbyResumeNewBtn').addEventListener('click', () => {
+          sound.select();
+          document.getElementById('exitLobbyModal').classList.add('hidden');
+          initGame();
+        });
+
+        document.getElementById('lobbyBackBoardBtn').addEventListener('click', () => {
+          sound.select();
+          document.getElementById('exitLobbyModal').classList.add('hidden');
         });
 
         const rulesModal = document.getElementById('rulesModal');
@@ -3236,6 +3565,14 @@
       }
 
       window.onload = function () {
+        try {
+          const sSelf = parseInt(localStorage.getItem('doushouqi_self_score') || '0', 10);
+          const sOpp = parseInt(localStorage.getItem('doushouqi_opp_score') || '0', 10);
+          if (!isNaN(sSelf)) state.selfTotalScore = sSelf;
+          if (!isNaN(sOpp)) state.oppTotalScore = sOpp;
+          document.getElementById('selfTotalScoreText').textContent = String(state.selfTotalScore);
+          document.getElementById('oppTotalScoreText').textContent = String(state.oppTotalScore);
+        } catch (e) {}
         renderChainBarAndStrip();
         initGame();
         setupEvents();
