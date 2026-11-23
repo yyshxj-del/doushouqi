@@ -1,0 +1,2631 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>斗兽棋 · 小程序棋牌大厅排位版</title>
+<style>
+  :root {
+    --grass-top: #7cd43b;
+    --grass-mid: #65be27;
+    --grass-bot: #4ea518;
+    --track-yellow: #d9ee54;
+    --track-dash: #bcd936;
+    --slot-outer: #d7ea87;
+    --slot-inner: #a4b86a;
+    --slot-shadow: #6e8d29;
+    --red-card: #ff6e80;
+    --red-border: #e53950;
+    --red-base: #fff0d6;
+    --blue-card: #2986f5;
+    --blue-border: #125bc2;
+    --blue-base: #e6f3ff;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Rounded Mplus 1c", sans-serif;
+    background: #2f6c0e;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .game-stage {
+    position: relative;
+    width: 100%;
+    max-width: 450px;
+    height: 100%;
+    max-height: 900px;
+    background:
+      radial-gradient(circle at 18% 12%, rgba(255,255,255,0.16) 0%, transparent 32%),
+      radial-gradient(circle at 85% 24%, rgba(255,255,255,0.12) 0%, transparent 28%),
+      linear-gradient(180deg, var(--grass-top) 0%, var(--grass-mid) 52%, var(--grass-bot) 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 8px 11px 10px;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.45);
+    overflow: hidden;
+    transition: max-width 0.25s ease, max-height 0.25s ease;
+  }
+
+  .game-stage.is-fullscreen {
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    border-radius: 0 !important;
+    padding: 10px 18px 14px;
+  }
+
+  .game-stage.is-fullscreen .board-wrapper {
+    max-width: min(74vh, 92vw);
+  }
+
+  .grass-tuft {
+    position: absolute;
+    pointer-events: none;
+    opacity: 0.35;
+    z-index: 0;
+  }
+
+  /* 顶部小程序棋牌大厅个人名片 + 对战信息栏 */
+  .hall-header {
+    position: relative;
+    z-index: 2;
+    background: rgba(16, 44, 5, 0.42);
+    border: 1.5px solid rgba(255, 255, 255, 0.32);
+    border-radius: 14px;
+    padding: 6px 9px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.18);
+  }
+
+  .player-card-mini {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    background: rgba(255,255,255,0.12);
+    padding: 3px 8px 3px 4px;
+    border-radius: 22px;
+    border: 1px solid rgba(255,255,255,0.28);
+    transition: transform 0.12s;
+    min-width: 0;
+  }
+
+  .player-card-mini:active {
+    transform: scale(0.96);
+  }
+
+  .avatar-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ffe066, #f59f00);
+    border: 2px solid #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+    flex-shrink: 0;
+  }
+
+  .player-meta {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+    min-width: 0;
+  }
+
+  .player-name-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .player-name {
+    color: #fff;
+    font-size: 12px;
+    font-weight: 900;
+    max-width: 78px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  }
+
+  .tier-tag {
+    background: linear-gradient(135deg, #ffd43b, #f08c00);
+    color: #4a2100;
+    font-size: 10px;
+    font-weight: 900;
+    padding: 1px 5px;
+    border-radius: 8px;
+    white-space: nowrap;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+  }
+
+  .player-stats-line {
+    color: #e9fac8;
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  /* 对手信息卡 (右侧) */
+  .opponent-card-mini {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0,0,0,0.24);
+    padding: 3px 6px 3px 8px;
+    border-radius: 22px;
+    border: 1px solid rgba(255,255,255,0.22);
+    min-width: 0;
+  }
+
+  .opponent-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    line-height: 1.15;
+    min-width: 0;
+  }
+
+  .match-btn-top {
+    background: linear-gradient(180deg, #ff922b 0%, #e8590c 100%);
+    color: #fff;
+    border: 2px solid #fff4e6;
+    border-radius: 14px;
+    padding: 5px 9px;
+    font-size: 11px;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 3px 0 #9c3600, 0 4px 8px rgba(0,0,0,0.25);
+    white-space: nowrap;
+    transition: transform 0.1s;
+    flex-shrink: 0;
+  }
+
+  .match-btn-top:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 #9c3600;
+  }
+
+  /* 食物链顺序条 + 顶部辅助操作行 */
+  .chain-bar-wrap {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .chain-bar {
+    background: rgba(27, 67, 9, 0.28);
+    border: 1.5px solid rgba(255,255,255,0.25);
+    border-radius: 14px;
+    padding: 3px 5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    backdrop-filter: blur(4px);
+  }
+
+  .chain-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 24px;
+    position: relative;
+  }
+
+  .chain-item svg {
+    width: 22px;
+    height: 22px;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));
+  }
+
+  .chain-arrow {
+    color: #fff35c;
+    font-weight: 900;
+    font-size: 10px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.45);
+    margin: 0 -2px;
+  }
+
+  /* 求和 / 阵营 / 认输 控制栏 */
+  .action-bar {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 1px 2px;
+  }
+
+  .pill-btn {
+    position: relative;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    width: 88px;
+    height: 36px;
+    border-radius: 20px;
+    font-size: 15px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.1s ease, filter 0.15s ease;
+    font-family: inherit;
+  }
+
+  .pill-btn::before {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 10px;
+    right: 10px;
+    height: 9px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.65), rgba(255,255,255,0.05));
+    border-radius: 10px;
+    pointer-events: none;
+  }
+
+  .pill-btn:active {
+    transform: translateY(2px) scale(0.97);
+  }
+
+  .btn-draw {
+    background: linear-gradient(180deg, #ffdf4d 0%, #f5ab1d 100%);
+    border: 2px solid #fff5b8;
+    box-shadow: 0 3px 0 #b87307, 0 5px 9px rgba(0,0,0,0.25);
+    text-shadow: 0 1.5px 0 #b87307, 0 -1px 0 #b87307, 1.5px 0 0 #b87307, -1.5px 0 0 #b87307;
+  }
+
+  .btn-resign {
+    background: linear-gradient(180deg, #ff793f 0%, #dd4115 100%);
+    border: 2px solid #ffd1bd;
+    box-shadow: 0 3px 0 #912104, 0 5px 9px rgba(0,0,0,0.25);
+    text-shadow: 0 1.5px 0 #8a1f03, 0 -1px 0 #8a1f03, 1.5px 0 0 #8a1f03, -1.5px 0 0 #8a1f03;
+  }
+
+  .camp-badge {
+    flex: 1;
+    max-width: 175px;
+    height: 32px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #f36886 0%, #d83b5c 100%);
+    border: 2px solid #ffd0dc;
+    box-shadow: 0 3px 0 #921b36, inset 0 2px 3px rgba(255,255,255,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    text-shadow: 0 1.5px 2px rgba(107, 12, 34, 0.8);
+    transition: all 0.25s ease;
+    padding: 0 6px;
+    white-space: nowrap;
+  }
+
+  .camp-badge.camp-blue {
+    background: linear-gradient(180deg, #4facfe 0%, #1b69d4 100%);
+    border-color: #c7e3ff;
+    box-shadow: 0 3px 0 #0c3e87, inset 0 2px 3px rgba(255,255,255,0.45);
+    text-shadow: 0 1.5px 2px rgba(8, 39, 87, 0.85);
+  }
+
+  .camp-badge.camp-unset {
+    background: linear-gradient(180deg, #98b446 0%, #6d8923 100%);
+    border-color: #e6f5b0;
+    box-shadow: 0 3px 0 #475b12, inset 0 2px 3px rgba(255,255,255,0.4);
+    text-shadow: 0 1.5px 2px rgba(42, 58, 7, 0.85);
+  }
+
+  /* 实时状态胶囊 */
+  .status-strip {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(18, 49, 5, 0.34);
+    border-radius: 10px;
+    padding: 3px 9px;
+    color: #f4ffcf;
+    font-size: 11px;
+    font-weight: 700;
+    gap: 4px;
+  }
+
+  .status-strip .turn-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .turn-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ffea59;
+    box-shadow: 0 0 6px #ffea59;
+    animation: pulseDot 1.1s infinite alternate;
+  }
+
+  @keyframes pulseDot {
+    from { transform: scale(0.85); opacity: 0.7; }
+    to { transform: scale(1.2); opacity: 1; }
+  }
+
+  /* 4x4 棋盘主区域 */
+  .board-wrapper {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    aspect-ratio: 1 / 1.03;
+    max-height: 55vh;
+    margin: 0 auto;
+    padding: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .board-grid {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 11px;
+  }
+
+  .board-tracks {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .cell-slot {
+    position: relative;
+    z-index: 1;
+    border-radius: 17px;
+    background: var(--slot-outer);
+    border: 2.5px solid #e7f69d;
+    box-shadow: 0 4px 0 var(--slot-shadow), 0 6px 10px rgba(0,0,0,0.22);
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.12s ease;
+  }
+
+  .cell-slot::before {
+    content: "";
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    background: var(--slot-inner);
+    box-shadow: inset 0 3px 5px rgba(59, 77, 17, 0.45);
+  }
+
+  .cell-slot.valid-target {
+    animation: slotBounce 0.75s infinite alternate;
+    border-color: #fff666;
+    box-shadow: 0 0 0 3px rgba(255, 246, 102, 0.7), 0 4px 0 var(--slot-shadow);
+  }
+
+  .cell-slot.valid-suicide {
+    animation: slotBounce 0.75s infinite alternate;
+    border-color: #ff922b;
+    box-shadow: 0 0 0 3px rgba(255, 146, 43, 0.8), 0 4px 0 var(--slot-shadow);
+  }
+
+  @keyframes slotBounce {
+    from { transform: scale(0.98); }
+    to { transform: scale(1.03); }
+  }
+
+  .piece-card {
+    position: absolute;
+    inset: 3px;
+    border-radius: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+    z-index: 2;
+  }
+
+  /* 未翻开的 ? 木牌 */
+  .piece-card.mystery {
+    background:
+      repeating-conic-gradient(
+        from 0deg at 50% 50%,
+        #e88b25 0deg 18deg,
+        #d17113 18deg 36deg
+      );
+    border: 3px solid #f9be5b;
+    box-shadow:
+      0 5px 0 #7b420b,
+      0 7px 11px rgba(0,0,0,0.32),
+      inset 0 2px 4px rgba(255,255,255,0.45);
+  }
+
+  .piece-card.mystery::after {
+    content: "?";
+    font-size: 36px;
+    font-weight: 900;
+    color: #fff799;
+    text-shadow:
+      0 3px 0 #8c4806,
+      0 -1.5px 0 #8c4806,
+      2px 0 0 #8c4806,
+      -2px 0 0 #8c4806,
+      0 5px 8px rgba(0,0,0,0.35);
+    font-family: "Arial Rounded MT Bold", "PingFang SC", sans-serif;
+  }
+
+  /* 已翻开的动物立体卡座 */
+  .piece-card.revealed {
+    padding: 2px;
+  }
+
+  .piece-card.revealed.red {
+    background: linear-gradient(180deg, #ff7e8e 0%, #ef4358 100%);
+    border: 2.5px solid #ffd4da;
+    box-shadow:
+      0 5px 0 #a91d30,
+      0 0 0 2px #fff2d6,
+      0 7px 12px rgba(214, 34, 58, 0.42);
+  }
+
+  .piece-card.revealed.blue {
+    background: linear-gradient(180deg, #4ca2ff 0%, #1a6ee0 100%);
+    border: 2.5px solid #d4ebff;
+    box-shadow:
+      0 5px 0 #0c4391,
+      0 0 0 2px #e6f4ff,
+      0 7px 12px rgba(17, 85, 190, 0.42);
+  }
+
+  .piece-card.selected {
+    transform: translateY(-7px) scale(1.07);
+    z-index: 10;
+  }
+
+  .piece-card.revealed.red.selected {
+    box-shadow:
+      0 10px 0 #a91d30,
+      0 0 0 3.5px #fff566,
+      0 13px 20px rgba(0,0,0,0.45);
+  }
+
+  .piece-card.revealed.blue.selected {
+    box-shadow:
+      0 10px 0 #0c4391,
+      0 0 0 3.5px #fff566,
+      0 13px 20px rgba(0,0,0,0.45);
+  }
+
+  .animal-avatar {
+    width: 88%;
+    height: 88%;
+    margin-top: -6px;
+    filter: drop-shadow(0 3px 3px rgba(0,0,0,0.28));
+  }
+
+  .animal-name-tag {
+    position: absolute;
+    right: 2px;
+    bottom: 1px;
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1;
+    padding: 1px 3px;
+    border-radius: 6px;
+  }
+
+  .piece-card.red .animal-name-tag {
+    color: #ef4156;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1.5px solid #ef4156;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  }
+
+  .piece-card.blue .animal-name-tag {
+    color: #1668d9;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1.5px solid #1668d9;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  }
+
+  .rank-dot {
+    position: absolute;
+    left: 4px;
+    top: 3px;
+    font-size: 10px;
+    font-weight: 900;
+    color: rgba(255,255,255,0.92);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.55);
+  }
+
+  .last-step-badge {
+    position: absolute;
+    top: -7px;
+    right: -4px;
+    background: #fff;
+    color: #2f5e10;
+    border: 1.5px solid #49871c;
+    border-radius: 8px;
+    padding: 1px 4px;
+    font-size: 9px;
+    font-weight: 900;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+    z-index: 12;
+    pointer-events: none;
+  }
+
+  .action-tag {
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 900;
+    padding: 1px 6px;
+    border-radius: 8px;
+    white-space: nowrap;
+    z-index: 14;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.35);
+    pointer-events: none;
+    animation: tagFloat 0.6s infinite alternate;
+  }
+
+  .action-tag.tag-eat {
+    background: linear-gradient(180deg, #ff5252, #c92a2a);
+    border: 1.5px solid #ffe3e3;
+  }
+
+  .action-tag.tag-trade {
+    background: linear-gradient(180deg, #fcc419, #e67700);
+    border: 1.5px solid #fff9db;
+  }
+
+  .action-tag.tag-suicide {
+    background: linear-gradient(180deg, #9c36b5, #5f3dc4);
+    border: 1.5px solid #f3d9fa;
+  }
+
+  @keyframes tagFloat {
+    from { transform: translateX(-50%) translateY(0); }
+    to { transform: translateX(-50%) translateY(-3px); }
+  }
+
+  /* 底部功能菜单栏 */
+  .bottom-bar {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 5px;
+    background: rgba(18, 49, 5, 0.34);
+    border-radius: 12px;
+    padding: 5px 7px;
+  }
+
+  .mini-btn {
+    border: 1.5px solid rgba(255,255,255,0.55);
+    background: rgba(255,255,255,0.16);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 4px 8px;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+
+  .mini-btn:active {
+    transform: scale(0.94);
+  }
+
+  .mini-btn.active {
+    background: #fff35c;
+    color: #365f0b;
+    border-color: #fff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+  }
+
+  /* 通用弹窗遮罩 */
+  .modal-mask {
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 26, 4, 0.72);
+    backdrop-filter: blur(5px);
+    z-index: 50;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+
+  .modal-mask.show {
+    display: flex;
+  }
+
+  .modal-card {
+    width: 100%;
+    max-width: 370px;
+    max-height: 88vh;
+    overflow-y: auto;
+    background: linear-gradient(180deg, #fffbe8 0%, #f7ecc6 100%);
+    border: 4px solid #e8aa35;
+    border-radius: 22px;
+    padding: 16px 15px 14px;
+    text-align: center;
+    box-shadow: 0 12px 0 #9f690b, 0 18px 32px rgba(0,0,0,0.55);
+    animation: popModal 0.24s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes popModal {
+    from { transform: scale(0.78); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .modal-title {
+    font-size: 21px;
+    font-weight: 900;
+    color: #d9480f;
+    text-shadow: 0 2px 0 #fff;
+    margin-bottom: 6px;
+  }
+
+  .modal-desc {
+    font-size: 12.5px;
+    color: #5c4718;
+    line-height: 1.5;
+    margin-bottom: 12px;
+    font-weight: 700;
+  }
+
+  .score-breakdown-box {
+    background: rgba(232, 170, 53, 0.16);
+    border: 1.5px dashed #d69116;
+    border-radius: 12px;
+    padding: 8px 10px;
+    margin-bottom: 12px;
+    text-align: left;
+    font-size: 12px;
+    color: #5a3f0e;
+    line-height: 1.55;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .modal-btn {
+    border: none;
+    background: linear-gradient(180deg, #74d62e 0%, #4ca312 100%);
+    border: 2px solid #d8ffab;
+    box-shadow: 0 4px 0 #2f6c07;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 900;
+    padding: 8px 18px;
+    border-radius: 18px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .modal-btn.btn-secondary {
+    background: linear-gradient(180deg, #ff922b 0%, #d9480f 100%);
+    border-color: #ffd8a8;
+    box-shadow: 0 4px 0 #8c2d06;
+  }
+
+  .modal-btn.btn-neutral {
+    background: linear-gradient(180deg, #868e96 0%, #495057 100%);
+    border-color: #dee2e6;
+    box-shadow: 0 4px 0 #212529;
+  }
+
+  .modal-btn:active {
+    transform: translateY(2px);
+  }
+
+  /* 玩家注册 / 个人段位档案弹窗表单 */
+  .form-group {
+    text-align: left;
+    margin-bottom: 10px;
+  }
+
+  .form-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 900;
+    color: #6b4c15;
+    margin-bottom: 4px;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 2px solid #dfb45b;
+    background: #fff;
+    font-size: 13px;
+    font-weight: 800;
+    color: #3b2a0a;
+    outline: none;
+    font-family: inherit;
+  }
+
+  .form-input:focus {
+    border-color: #e67700;
+  }
+
+  .avatar-picker {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+
+  .avatar-opt {
+    background: #fff;
+    border: 2px solid #e5c67b;
+    border-radius: 10px;
+    padding: 5px 4px;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    transition: all 0.12s;
+  }
+
+  .avatar-opt span {
+    font-size: 10px;
+    font-weight: 800;
+    color: #6b4c15;
+  }
+
+  .avatar-opt.selected {
+    border-color: #e8590c;
+    background: #fff4e6;
+    box-shadow: 0 0 0 2px rgba(232, 89, 12, 0.35);
+    transform: translateY(-1px);
+  }
+
+  /* 段位阶梯表 */
+  .rank-ladder-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    margin: 8px 0 12px;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1.5px solid #dfb45b;
+  }
+
+  .rank-ladder-table th {
+    background: #f3d486;
+    color: #5a3c08;
+    padding: 5px 6px;
+    font-weight: 900;
+  }
+
+  .rank-ladder-table td {
+    padding: 4px 6px;
+    border-top: 1px solid #f2e2b6;
+    color: #4a340b;
+    font-weight: 700;
+  }
+
+  .rank-ladder-table tr.current-tier-row {
+    background: #fff3bf;
+    font-weight: 900;
+    color: #d9480f;
+  }
+
+  /* 在线匹配雷达动画 */
+  .radar-box {
+    position: relative;
+    width: 96px;
+    height: 96px;
+    margin: 8px auto 12px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(76, 163, 18, 0.25) 0%, rgba(47, 108, 14, 0.85) 100%);
+    border: 3px solid #74d62e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    box-shadow: 0 0 18px rgba(116, 214, 46, 0.5);
+  }
+
+  .radar-sweep {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, rgba(169, 255, 104, 0.65) 0deg, transparent 95deg, transparent 360deg);
+    animation: radarSpin 1.2s linear infinite;
+  }
+
+  @keyframes radarSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .matched-vs-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    background: rgba(232, 170, 53, 0.18);
+    border: 1.5px solid #dfb45b;
+    border-radius: 14px;
+    padding: 10px 8px;
+    margin-bottom: 12px;
+  }
+
+  .vs-player-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    width: 42%;
+  }
+
+  .vs-badge {
+    font-size: 20px;
+    font-weight: 900;
+    color: #e8590c;
+    text-shadow: 0 2px 0 #fff;
+  }
+
+  .toast-tip {
+    position: absolute;
+    top: 48%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(20, 42, 7, 0.92);
+    color: #fff8a6;
+    border: 2px solid #d5f26d;
+    padding: 8px 16px;
+    border-radius: 18px;
+    font-size: 13px;
+    font-weight: 800;
+    z-index: 60;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    white-space: nowrap;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+  }
+
+  .toast-tip.show {
+    opacity: 1;
+  }
+</style>
+</head>
+<body>
+
+<div class="game-stage" id="gameStage">
+  <!-- 草坪装饰 -->
+  <svg class="grass-tuft" style="top:18%;left:4%;width:28px;height:20px" viewBox="0 0 30 20">
+    <path d="M5 18 Q2 6 8 4 Q9 12 12 18 M12 18 Q15 3 20 2 Q19 11 18 18 M18 18 Q24 8 27 7 Q24 14 22 18" stroke="#a6eb5a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  </svg>
+  <svg class="grass-tuft" style="bottom:14%;right:5%;width:28px;height:20px" viewBox="0 0 30 20">
+    <path d="M5 18 Q2 6 8 4 Q9 12 12 18 M12 18 Q15 3 20 2 Q19 11 18 18" stroke="#a6eb5a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  </svg>
+
+  <!-- 1. 小程序棋牌大厅顶部栏：玩家等级档案 + 在线匹配对手 + 段位匹配按钮 -->
+  <div class="hall-header">
+    <div class="player-card-mini" id="playerCardBtn" title="点击编辑玩家资料与查看段位">
+      <div class="avatar-circle" id="myAvatarIcon">🐯</div>
+      <div class="player-meta">
+        <div class="player-name-row">
+          <span class="player-name" id="myNicknameText">未注册玩家</span>
+          <span class="tier-tag" id="myTierBadge">Lv.1 萌鼠</span>
+        </div>
+        <div class="player-stats-line" id="myStatsLine">积分: 0 · 胜率: 0%</div>
+      </div>
+    </div>
+
+    <button class="match-btn-top" id="matchmakingBtn">⚡段位匹配</button>
+
+    <div class="opponent-card-mini" id="opponentCardBox">
+      <div class="opponent-meta">
+        <div class="player-name-row">
+          <span class="tier-tag" id="oppTierBadge">Lv.1 萌鼠</span>
+          <span class="player-name" id="oppNicknameText">森林巡逻兵</span>
+        </div>
+        <div class="player-stats-line" id="oppStatsLine">积分: 20 · 胜率: 48%</div>
+      </div>
+      <div class="avatar-circle" id="oppAvatarIcon" style="background:linear-gradient(135deg,#74c0fc,#1c7ed6)">🐺</div>
+    </div>
+  </div>
+
+  <!-- 2. 顶部食物链克制条 (象>狮>虎>豹>狼>狗>猫>鼠>象) -->
+  <div class="chain-bar-wrap">
+    <div class="chain-bar" id="chainBar"></div>
+  </div>
+
+  <!-- 3. 求和 / 我方颜色阵营 / 认输 -->
+  <div class="action-bar">
+    <button class="pill-btn btn-draw" id="btnDraw">求和</button>
+    <div class="camp-badge camp-unset" id="campBadge">首翻定色(请翻牌)</div>
+    <button class="pill-btn btn-resign" id="btnResign">认输</button>
+  </div>
+
+  <!-- 4. 状态提示与全屏后10步和棋倒计时 -->
+  <div class="status-strip">
+    <div class="turn-pill">
+      <span class="turn-dot" id="turnDot"></span>
+      <span id="turnText">请翻开任意「?」方块确定本局阵营</span>
+    </div>
+    <div id="remainText">红:8 蓝:8</div>
+  </div>
+
+  <!-- 5. 4x4 棋盘区 -->
+  <div class="board-wrapper">
+    <svg class="board-tracks" viewBox="0 0 400 400" preserveAspectRatio="none">
+      <g stroke="#d7ee50" stroke-width="18" stroke-linecap="round">
+        <line x1="50" y1="50" x2="350" y2="50" />
+        <line x1="50" y1="150" x2="350" y2="150" />
+        <line x1="50" y1="250" x2="350" y2="250" />
+        <line x1="50" y1="350" x2="350" y2="350" />
+        <line x1="50" y1="50" x2="50" y2="350" />
+        <line x1="150" y1="50" x2="150" y2="350" />
+        <line x1="250" y1="50" x2="250" y2="350" />
+        <line x1="350" y1="50" x2="350" y2="350" />
+      </g>
+      <g stroke="#b7d42b" stroke-width="4" stroke-dasharray="6 8" stroke-linecap="round">
+        <line x1="50" y1="50" x2="350" y2="50" />
+        <line x1="50" y1="150" x2="350" y2="150" />
+        <line x1="50" y1="250" x2="350" y2="250" />
+        <line x1="50" y1="350" x2="350" y2="350" />
+        <line x1="50" y1="50" x2="50" y2="350" />
+        <line x1="150" y1="50" x2="150" y2="350" />
+        <line x1="250" y1="50" x2="250" y2="350" />
+        <line x1="350" y1="50" x2="350" y2="350" />
+      </g>
+    </svg>
+
+    <div class="board-grid" id="boardGrid"></div>
+  </div>
+
+  <!-- 6. 底部控制栏 -->
+  <div class="bottom-bar">
+    <div style="display:flex;gap:4px;align-items:center;">
+      <button class="mini-btn active" id="modeRankedBtn">🏆排位匹配</button>
+      <button class="mini-btn" id="modeLocalBtn">👥双人同屏</button>
+      <button class="mini-btn" id="leaderboardBtn">📊排行榜</button>
+    </div>
+    <div style="display:flex;gap:4px;align-items:center;">
+      <button class="mini-btn" id="fullscreenBtn">⛶ 全屏</button>
+      <button class="mini-btn" id="ruleBtn">📜规则</button>
+      <button class="mini-btn" id="restartBtn">🔄重开</button>
+    </div>
+  </div>
+
+  <!-- 轻提示 Toast -->
+  <div class="toast-tip" id="toastTip"></div>
+
+  <!-- 弹窗 A：玩家注册 / 个人段位档案弹窗 -->
+  <div class="modal-mask" id="profileModal">
+    <div class="modal-card">
+      <div class="modal-title" id="profileModalTitle">🎮 棋牌大厅 · 玩家注册登录</div>
+      <div class="modal-desc" id="profileModalSub">注册后系统将自动记录您的等级段位、在线胜负战绩与累计积分，并为您智能匹配同段位对手！</div>
+
+      <div class="form-group">
+        <label class="form-label" for="nicknameInput">玩家昵称（2~10个字）：</label>
+        <input class="form-input" id="nicknameInput" type="text" maxlength="10" placeholder="请输入您的游戏昵称" value="森林棋王" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">选择专属守护兽头像：</label>
+        <div class="avatar-picker" id="avatarPicker">
+          <div class="avatar-opt selected" data-avatar="🐯">🐯<span>猛虎</span></div>
+          <div class="avatar-opt" data-avatar="🦁">🦁<span>狂狮</span></div>
+          <div class="avatar-opt" data-avatar="🐘">🐘<span>巨象</span></div>
+          <div class="avatar-opt" data-avatar="🐭">🐭<span>灵鼠</span></div>
+          <div class="avatar-opt" data-avatar="🐆">🐆<span>猎豹</span></div>
+          <div class="avatar-opt" data-avatar="🐺">🐺<span>苍狼</span></div>
+          <div class="avatar-opt" data-avatar="🐶">🐶<span>忠犬</span></div>
+          <div class="avatar-opt" data-avatar="🐱">🐱<span>萌猫</span></div>
+        </div>
+      </div>
+
+      <div class="score-breakdown-box" id="myProfileSummaryBox" style="margin-top:8px;"></div>
+
+      <table class="rank-ladder-table" id="tierLadderTable">
+        <thead>
+          <tr>
+            <th>段位称号</th>
+            <th>等级范围</th>
+            <th>综合评定标准(战力/积分)</th>
+          </tr>
+        </thead>
+        <tbody id="tierLadderBody"></tbody>
+      </table>
+
+      <div class="modal-actions">
+        <button class="modal-btn" id="saveProfileBtn">✅ 保存并进入大厅</button>
+        <button class="modal-btn btn-neutral" id="resetStatsBtn">🧹 重置战绩</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 弹窗 B：智能段位匹配弹窗 -->
+  <div class="modal-mask" id="matchmakingModal">
+    <div class="modal-card">
+      <div class="modal-title" id="mmTitle">📡 正在为您匹配同段位对手...</div>
+      <div class="modal-desc" id="mmDesc">系统正根据您的等级、在线胜率与积分检索棋逢对手的玩家</div>
+
+      <div class="radar-box" id="mmRadarBox">
+        <div class="radar-sweep"></div>
+        <span style="font-size:32px;position:relative;z-index:2;">🐾</span>
+      </div>
+
+      <div class="matched-vs-box" id="mmVsBox" style="display:none;">
+        <div class="vs-player-col">
+          <div class="avatar-circle" id="mmMyAvatar" style="width:42px;height:42px;font-size:22px;">🐯</div>
+          <div style="font-size:13px;font-weight:900;color:#3b2a0a;" id="mmMyName">我</div>
+          <span class="tier-tag" id="mmMyTier">Lv.1</span>
+          <div style="font-size:10.5px;color:#6b4c15;font-weight:700;" id="mmMyInfo">积分: 0</div>
+        </div>
+        <div class="vs-badge">VS</div>
+        <div class="vs-player-col">
+          <div class="avatar-circle" id="mmOppAvatar" style="width:42px;height:42px;font-size:22px;background:linear-gradient(135deg,#74c0fc,#1c7ed6);">🐺</div>
+          <div style="font-size:13px;font-weight:900;color:#3b2a0a;" id="mmOppName">对手</div>
+          <span class="tier-tag" id="mmOppTier">Lv.1</span>
+          <div style="font-size:10.5px;color:#6b4c15;font-weight:700;" id="mmOppInfo">积分: 0</div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="modal-btn" id="mmStartBtn" style="display:none;">⚔️ 立即开战</button>
+        <button class="modal-btn btn-neutral" id="mmCancelBtn">取消匹配</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 弹窗 C：全服段位天梯榜弹窗 -->
+  <div class="modal-mask" id="leaderboardModal">
+    <div class="modal-card">
+      <div class="modal-title">🏆 棋牌大厅 · 全服段位天梯榜</div>
+      <div class="modal-desc">根据玩家综合战力（等级段位 + 在线胜率 + 累计积分）实时排名</div>
+      <table class="rank-ladder-table">
+        <thead>
+          <tr>
+            <th>排名</th>
+            <th>玩家</th>
+            <th>段位等级</th>
+            <th>胜率(场次)</th>
+            <th>总积分</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboardBody"></tbody>
+      </table>
+      <div class="modal-actions">
+        <button class="modal-btn" id="closeLeaderboardBtn">返回游戏</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 弹窗 D：胜负结算 & 规则说明弹窗 -->
+  <div class="modal-mask" id="resultModal">
+    <div class="modal-card">
+      <div class="modal-title" id="modalTitle">🎉 红方获胜！</div>
+      <div class="modal-desc" id="modalDesc">所有对方棋子已被消灭</div>
+      <div class="score-breakdown-box" id="scoreBreakdownBox" style="display:none;"></div>
+      <div class="modal-actions">
+        <button class="modal-btn" id="modalMatchNextBtn">⚡ 匹配下一局</button>
+        <button class="modal-btn btn-secondary" id="modalAgainBtn">🔄 再战当前对手</button>
+        <button class="modal-btn btn-neutral" id="modalExitBtn">🚪 退出</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+ * 1. Q版动物 SVG 绘制器 (1鼠 ~ 8象)
+ * ========================================================= */
+const ANIMAL_META = {
+  8: { name: '象', rank: 8 },
+  7: { name: '狮', rank: 7 },
+  6: { name: '虎', rank: 6 },
+  5: { name: '豹', rank: 5 },
+  4: { name: '狼', rank: 4 },
+  3: { name: '狗', rank: 3 },
+  2: { name: '猫', rank: 2 },
+  1: { name: '鼠', rank: 1 }
+};
+
+function getAnimalSVG(rank) {
+  switch (rank) {
+    case 8:
+      return `<svg viewBox="0 0 100 100" class="animal-avatar">
+        <ellipse cx="20" cy="52" rx="16" ry="22" fill="#7ec8ff" stroke="#3670a0" stroke-width="3"/>
+        <ellipse cx="20" cy="54" rx="10" ry="15" fill="#ff9ebb"/>
+        <ellipse cx="80" cy="52" rx="16" ry="22" fill="#7ec8ff" stroke="#3670a0" stroke-width="3"/>
+        <ellipse cx="80" cy="54" rx="10" ry="15" fill="#ff9ebb"/>
+        <ellipse cx="50" cy="76" rx="22" ry="16" fill="#7ec8ff" stroke="#3670a0" stroke-width="3"/>
+        <circle cx="50" cy="48" r="26" fill="#8ed2ff" stroke="#3670a0" stroke-width="3"/>
+        <rect x="38" y="14" width="24" height="12" rx="5" fill="#2c6bed" stroke="#1b4399" stroke-width="2.5"/>
+        <polygon points="50,15 52,20 57,20 53,23 55,27 50,24 45,27 47,23 43,20 48,20" fill="#ffeb3b"/>
+        <circle cx="39" cy="46" r="5.5" fill="#2b1b28"/><circle cx="37.5" cy="44" r="2" fill="#fff"/>
+        <circle cx="61" cy="46" r="5.5" fill="#2b1b28"/><circle cx="59.5" cy="44" r="2" fill="#fff"/>
+        <ellipse cx="32" cy="54" rx="4.5" ry="2.5" fill="#ff85a2" opacity="0.7"/>
+        <ellipse cx="68" cy="54" rx="4.5" ry="2.5" fill="#ff85a2" opacity="0.7"/>
+        <path d="M44 54 C44 68, 38 70, 38 63" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+        <path d="M56 54 C56 68, 62 70, 62 63" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+        <path d="M46 50 C46 66, 57 70, 58 60" fill="#8ed2ff" stroke="#3670a0" stroke-width="3" stroke-linecap="round"/>
+      </svg>`;
+    case 7:
+      return `<svg viewBox="0 0 100 100" class="animal-avatar">
+        <path d="M50 14 C60 10,70 18,74 26 C84 30,88 42,82 52 C86 62,80 72,70 74 C64 82,36 82,30 74 C20 72,14 62,18 52 C12 42,16 30,26 26 C30 18,40 10,50 14 Z" fill="#d97917" stroke="#6e3504" stroke-width="3"/>
+        <circle cx="31" cy="26" r="7" fill="#f7b733" stroke="#6e3504" stroke-width="2.5"/>
+        <circle cx="69" cy="26" r="7" fill="#f7b733" stroke="#6e3504" stroke-width="2.5"/>
+        <ellipse cx="50" cy="78" rx="19" ry="14" fill="#f7b733" stroke="#6e3504" stroke-width="3"/>
+        <circle cx="50" cy="48" r="22" fill="#ffd269" stroke="#6e3504" stroke-width="3"/>
+        <path d="M33 45 Q39 40 44 45" fill="none" stroke="#4a2502" stroke-width="3.5" stroke-linecap="round"/>
+        <path d="M56 45 Q61 40 67 45" fill="none" stroke="#4a2502" stroke-width="3.5" stroke-linecap="round"/>
+        <polygon points="50,53 46,49 54,49" fill="#6e3504"/>
+        <path d="M44 56 Q50 60 56 56" fill="none" stroke="#6e3504" stroke-width="2.5" stroke-linecap="round"/>
+        <ellipse cx="34" cy="52" rx="4" ry="2.2" fill="#ff7b7b" opacity="0.7"/>
+        <ellipse cx="66" cy="52" rx="4" ry="2.2" fill="#ff7b7b" opacity="0.7"/>
+      </svg>`;
+    case 6:
+      return `<svg viewBox="0 0 100 100" class="animal-avatar">
+        <circle cx="28" cy="24" r="9" fill="#ff9f1c" stroke="#6b3200" stroke-width="3"/>
+        <circle cx="72" cy="24" r="9" fill="#ff9f1c" stroke="#6b3200" stroke-width="3"/>
+        <ellipse cx="50" cy="76" rx="20" ry="15" fill="#ff9f1c" stroke="#6b3200" stroke-width="3"/>
+        <circle cx="50" cy="48" r="25" fill="#ff9f1c" stroke="#6b3200" stroke-width="3"/>
+        <path d="M50 25 L50 37 M43 29 L57 29 M45 34 L55 34" stroke="#522500" stroke-width="3.2" stroke-linecap="round"/>
+        <path d="M26 44 L33 46 M26 50 L34 51 M74 44 L67 46 M74 50 L66 51" stroke="#522500" stroke-width="3" stroke-linecap="round"/>
+        <ellipse cx="50" cy="56" rx="14" ry="10" fill="#fff3d6"/>
+        <circle cx="39" cy="45" r="4.8" fill="#2b1908"/><circle cx="37.5" cy="43.5" r="1.8" fill="#fff"/>
+        <circle cx="61" cy="45" r="4.8" fill="#2b1908"/><circle cx="59.5" cy="43.5" r="1.8" fill="#fff"/>
+        <polygon points="50,53 46,49 54,49" fill="#ff6b6b"/>
+        <path d="M44 57 Q50 53 56 57" fill="none" stroke="#522500" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>`;
+    case 5:
+      return `<svg viewBox="0 0 100 100" class="animal-avatar">
+        <circle cx="30" cy="25" r="8" fill="#ffd449" stroke="#6e470b" stroke-width="3"/>
+        <circle cx="70" cy="25" r="8" fill="#ffd449" stroke="#6e470b" stroke-width="3"/>
+        <ellipse cx="50" cy="76" rx="18" ry="15" fill="#ffd449" stroke="#6e470b" stroke-width="3"/>
+        <circle cx="50" cy="48" r="23" fill="#ffd449" stroke="#6e470b" stroke-width="3"/>
+        <circle cx="36" cy="34" r="2.5" fill="#7a4c08"/><circle cx="64" cy="34" r="2.5" fill="#7a4c08"/>
+        <circle cx="31" cy="54" r="2.2" fill="#7a4c08"/><circle cx="69" cy="54" r="2.2" fill="#7a4c08"/>
+        <circle cx="40" cy="74" r="2.5" fill="#7a4c08"/><circle cx="60" cy="74" r="2.5" fill="#7a4c08"/>
+        <circle cx="40" cy="46" r="4.5" fill="#2b1908"/><circle cx="38.5" cy="44.5" r="1.6" fill="#fff"/>
+        <circle cx="60" cy="46" r="4.5" fill="#2b1908"/><circle cx="58.5" cy="44.5" r="1.6" fill="#fff"/>
+        <polygon points="50,53 47,50 53,50" fill="#6e470b"/>
+        <path d="M45 57 Q50 61 55 57" fill="none" stroke="#6e470b" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>`;
+    case 4:
+      return `<svg viewBox="0 0 100 100" class="animal-avatar">
+        <polygon points="24,40 28,14 44,30" fill="#525b66" stroke="#262c33" stroke-width="3" stroke-linejoin="round"/>
+        <polygon points="28,36 30,20 40,30" fill="#ff9ebb"/>
+        <polygon points="76,40 72,14 56,30" fill="#525b66" stroke="#262c33" stroke-width="3" stroke-linejoin="round"/>
+        <polygon points="72,36 70,20 60,30" fill="#ff9ebb"/>
+        <ellipse cx="50" cy="76" rx="19" ry="15" fill="#525b66" stroke="#262c33" stroke-width="3"/>
+        <ellipse cx="50" cy="76" rx="11" ry="11" fill="#f1f5f9"/>
+        <circle cx="50" cy="49" r="24" fill="#525b66" stroke="#262c33" stroke-width="3"/>
+        <path d="M28 50 Q38 36 48 52 Q50 56 52 52 Q62 36 72 50 C72 64 62 71 50 71 C38 71 28 64 28 50 Z" fill="#f8fafc"/>
+        <circle cx="39" cy="47" r="4.8" fill="#1e293b"/><circle cx="37.5" cy="45.5" r="1.7" fill="#fff"/>
+        <circle cx="61" cy="47" r="4.8" fill="#1e293b"/><circle cx="59.5" cy="45.5" r="1.7" fill="#fff"/>
+        <line x1="36" y1="53" x2="36" y2="60" stroke="#e11d48" stroke-width="2.2" stroke-linecap="round"/>
+        <ellipse cx="50" cy="54" rx="4" ry="3" fill="#1e293b"/>
+        <path d="M45 60 Q50 63 55 60" fill="none" stroke="#1e293b" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>`;
+    case 3:
+      return `<svg viewBox="0 0 100 100" class="animal-avatar">
+        <ellipse cx="50" cy="75" rx="20" ry="16" fill="#d9a16c" stroke="#6e4419" stroke-width="3"/>
+        <circle cx="50" cy="48" r="24" fill="#e3af7d" stroke="#6e4419" stroke-width="3"/>
+        <path d="M27 30 C16 32, 16 48, 25 52 C28 45, 30 36, 27 30 Z" fill="#9c5a25" stroke="#5c320e" stroke-width="2.8"/>
+        <path d="M73 30 C84 32, 84 48, 75 52 C72 45, 70 36, 73 30 Z" fill="#9c5a25" stroke="#5c320e" stroke-width="2.8"/>
+        <ellipse cx="50" cy="55" rx="13" ry="10" fill="#7a4921"/>
+        <circle cx="38" cy="46" r="5" fill="#291707"/><circle cx="36.5" cy="44" r="1.8" fill="#fff"/>
+        <circle cx="62" cy="46" r="5" fill="#291707"/><circle cx="60.5" cy="44" r="1.8" fill="#fff"/>
+        <ellipse cx="50" cy="51" rx="4" ry="2.8" fill="#291707"/>
+        <ellipse cx="50" cy="60" rx="3.5" ry="4.5" fill="#ff758f"/>
+      </svg>`;
+    case 2:
+      return `<svg viewBox="0 0 100 100" class="animal-avatar">
+        <polygon points="26,38 28,16 44,28" fill="#f59e0b" stroke="#78350f" stroke-width="3" stroke-linejoin="round"/>
+        <polygon points="74,38 72,16 56,28" fill="#f59e0b" stroke="#78350f" stroke-width="3" stroke-linejoin="round"/>
+        <ellipse cx="50" cy="76" rx="18" ry="15" fill="#fffbeb" stroke="#78350f" stroke-width="3"/>
+        <circle cx="50" cy="49" r="23" fill="#fffbeb" stroke="#78350f" stroke-width="3"/>
+        <path d="M28 42 Q38 24 50 38 Q62 24 72 42 C72 30 62 26 50 26 C38 26 28 30 28 42 Z" fill="#f59e0b"/>
+        <circle cx="39" cy="48" r="4.8" fill="#291707"/><circle cx="37.5" cy="46.5" r="1.7" fill="#fff"/>
+        <circle cx="61" cy="48" r="4.8" fill="#291707"/><circle cx="59.5" cy="46.5" r="1.7" fill="#fff"/>
+        <polygon points="50,54 47,51 53,51" fill="#fb7185"/>
+        <path d="M45 57 Q50 60 55 57" fill="none" stroke="#78350f" stroke-width="2.3" stroke-linecap="round"/>
+        <line x1="22" y1="50" x2="31" y2="52" stroke="#78350f" stroke-width="2" stroke-linecap="round"/>
+        <line x1="22" y1="56" x2="31" y2="56" stroke="#78350f" stroke-width="2" stroke-linecap="round"/>
+        <line x1="78" y1="50" x2="69" y2="52" stroke="#78350f" stroke-width="2" stroke-linecap="round"/>
+        <line x1="78" y1="56" x2="69" y2="56" stroke="#78350f" stroke-width="2" stroke-linecap="round"/>
+      </svg>`;
+    case 1:
+    default:
+      return `<svg viewBox="0 0 100 100" class="animal-avatar">
+        <circle cx="26" cy="28" r="13" fill="#c89d7c" stroke="#5c3a21" stroke-width="3"/>
+        <circle cx="26" cy="28" r="8" fill="#f4a2b8"/>
+        <circle cx="74" cy="28" r="13" fill="#c89d7c" stroke="#5c3a21" stroke-width="3"/>
+        <circle cx="74" cy="28" r="8" fill="#f4a2b8"/>
+        <ellipse cx="50" cy="76" rx="17" ry="15" fill="#c89d7c" stroke="#5c3a21" stroke-width="3"/>
+        <ellipse cx="50" cy="77" rx="10" ry="11" fill="#fff5eb"/>
+        <circle cx="50" cy="49" r="22" fill="#c89d7c" stroke="#5c3a21" stroke-width="3"/>
+        <circle cx="39" cy="48" r="4.6" fill="#2b1708"/><circle cx="37.5" cy="46.5" r="1.7" fill="#fff"/>
+        <circle cx="61" cy="48" r="4.6" fill="#2b1708"/><circle cx="59.5" cy="46.5" r="1.7" fill="#fff"/>
+        <ellipse cx="32" cy="54" rx="4" ry="2.2" fill="#ff758f" opacity="0.75"/>
+        <ellipse cx="68" cy="54" rx="4" ry="2.2" fill="#ff758f" opacity="0.75"/>
+        <circle cx="50" cy="53" r="3" fill="#ff758f"/>
+        <line x1="22" y1="51" x2="30" y2="53" stroke="#5c3a21" stroke-width="2" stroke-linecap="round"/>
+        <line x1="78" y1="51" x2="70" y2="53" stroke="#5c3a21" stroke-width="2" stroke-linecap="round"/>
+      </svg>`;
+  }
+}
+
+function renderChainBar() {
+  const bar = document.getElementById('chainBar');
+  const order = [8, 7, 6, 5, 4, 3, 2, 1, 8];
+  let html = '';
+  order.forEach((rk, i) => {
+    html += `<div class="chain-item" title="${ANIMAL_META[rk].name}">${getAnimalSVG(rk)}</div>`;
+    if (i < order.length - 1) {
+      html += `<span class="chain-arrow">&gt;</span>`;
+    }
+  });
+  bar.innerHTML = html;
+}
+
+/* =========================================================
+ * 2. 棋牌大厅玩家账号、等级段位体系与智能匹配系统
+ * ========================================================= */
+const STORAGE_KEY = 'DSQ_HALL_PLAYER_V2';
+
+// 8大段位阶梯：综合战力 Rating = 累计积分 + 胜场*35 - 负场*12 + 胜率加成 + 连胜加成
+const TIER_LADDER = [
+  { id: 1, name: '森林萌鼠', short: '萌鼠', icon: '🐭', minRating: 0,    minLv: 1,  maxLv: 3,  aiDepth: 1, desc: '战力 0~79 · 新手入门段位' },
+  { id: 2, name: '机敏灵猫', short: '灵猫', icon: '🐱', minRating: 80,   minLv: 4,  maxLv: 7,  aiDepth: 1, desc: '战力 80~199 · 初窥门径' },
+  { id: 3, name: '忠勇猎犬', short: '猎犬', icon: '🐶', minRating: 200,  minLv: 8,  maxLv: 12, aiDepth: 2, desc: '战力 200~379 · 稳扎稳打' },
+  { id: 4, name: '疾风苍狼', short: '苍狼', icon: '🐺', minRating: 380,  minLv: 13, maxLv: 18, aiDepth: 2, desc: '战力 380~599 · 森林精锐' },
+  { id: 5, name: '闪电猎豹', short: '猎豹', icon: '🐆', minRating: 600,  minLv: 19, maxLv: 25, aiDepth: 3, desc: '战力 600~899 · 丛林高手' },
+  { id: 6, name: '百兽猛虎', short: '猛虎', icon: '🐯', minRating: 900,  minLv: 26, maxLv: 33, aiDepth: 3, desc: '战力 900~1299 · 啸傲山林' },
+  { id: 7, name: '荣耀狂狮', short: '狂狮', icon: '🦁', minRating: 1300, minLv: 34, maxLv: 41, aiDepth: 4, desc: '战力 1300~1799 · 宗师王者' },
+  { id: 8, name: '皇家巨象', short: '巨象', icon: '🐘', minRating: 1800, minLv: 42, maxLv: 99, aiDepth: 4, desc: '战力 1800+ · 传奇至尊' }
+];
+
+// 在线对手池模板（按段位分布）
+const ONLINE_OPPONENT_POOL = [
+  { name: '松果小萌新', avatar: '🐭', baseScore: 20,  winRate: 45, tierId: 1 },
+  { name: '溪谷寻宝鼠', avatar: '🐭', baseScore: 45,  winRate: 48, tierId: 1 },
+  { name: '午后晒太阳', avatar: '🐱', baseScore: 95,  winRate: 51, tierId: 2 },
+  { name: '喵星巡逻官', avatar: '🐱', baseScore: 150, winRate: 53, tierId: 2 },
+  { name: '汪汪队先锋', avatar: '🐶', baseScore: 240, winRate: 55, tierId: 3 },
+  { name: '金毛大镖客', avatar: '🐶', baseScore: 310, winRate: 56, tierId: 3 },
+  { name: '北境孤狼王', avatar: '🐺', baseScore: 430, winRate: 58, tierId: 4 },
+  { name: '月影啸西风', avatar: '🐺', baseScore: 520, winRate: 60, tierId: 4 },
+  { name: '极速追风豹', avatar: '🐆', baseScore: 680, winRate: 62, tierId: 5 },
+  { name: '丛林暗影客', avatar: '🐆', baseScore: 810, winRate: 64, tierId: 5 },
+  { name: '震山斑斓虎', avatar: '🐯', baseScore: 980, winRate: 66, tierId: 6 },
+  { name: '云从龙风从虎', avatar: '🐯', baseScore: 1160, winRate: 68, tierId: 6 },
+  { name: '黄金狮心王', avatar: '🦁', baseScore: 1420, winRate: 71, tierId: 7 },
+  { name: '草原大督军', avatar: '🦁', baseScore: 1650, winRate: 74, tierId: 7 },
+  { name: '泰坦圣象尊', avatar: '🐘', baseScore: 1980, winRate: 78, tierId: 8 },
+  { name: '斗兽棋大宗师', avatar: '🐘', baseScore: 2460, winRate: 83, tierId: 8 }
+];
+
+let playerProfile = {
+  registered: false,
+  uid: 'WX' + Math.floor(100000 + Math.random() * 900000),
+  nickname: '森林棋王',
+  avatar: '🐯',
+  score: 0,
+  wins: 0,
+  losses: 0,
+  draws: 0,
+  streak: 0,
+  maxStreak: 0
+};
+
+let currentOpponent = {
+  name: '松果小萌新',
+  avatar: '🐭',
+  level: 1,
+  tierName: '森林萌鼠',
+  tierShort: '萌鼠',
+  score: 20,
+  winRate: 46,
+  aiDepth: 1
+};
+
+function loadPlayerProfile() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        playerProfile = Object.assign({}, playerProfile, parsed);
+      }
+    }
+  } catch (e) {
+    // 忽略沙盒 localStorage 异常
+  }
+}
+
+function savePlayerProfile() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(playerProfile));
+  } catch (e) {
+    // 忽略沙盒 localStorage 异常
+  }
+}
+
+// 根据玩家水平（胜率/连胜）、在线赢输情况（净胜场）及累计积分计算综合战力与等级
+function calcPlayerTierAndLevel(prof) {
+  const totalGames = prof.wins + prof.losses + prof.draws;
+  const winRate = totalGames > 0 ? Math.round((prof.wins / totalGames) * 100) : 0;
+
+  // 综合战力分 Rating：
+  // 1) 累计积分权重 (100%)
+  // 2) 在线赢输情况：每胜1场+35战力，每负1场-12战力，平局+8战力
+  // 3) 玩家水平加成：满3局后胜率高于50%每1%奖励3分，当前连胜每场奖励15分
+  const winLossFactor = prof.wins * 35 - prof.losses * 12 + prof.draws * 8;
+  const skillBonus = (totalGames >= 3 && winRate > 50 ? (winRate - 50) * 3 : 0) + Math.max(0, prof.streak) * 15;
+  const rating = Math.max(0, Math.round(prof.score + winLossFactor + skillBonus));
+
+  // 计算具体等级 Lv.1 ~ Lv.99 (每 35 战力升1级)
+  const level = Math.min(99, Math.max(1, Math.floor(rating / 35) + 1));
+
+  // 匹配对应段位
+  let matchedTier = TIER_LADDER[0];
+  for (let i = TIER_LADDER.length - 1; i >= 0; i--) {
+    if (rating >= TIER_LADDER[i].minRating) {
+      matchedTier = TIER_LADDER[i];
+      break;
+    }
+  }
+
+  // 下一段位进度
+  const nextTierIdx = TIER_LADDER.findIndex(t => t.id === matchedTier.id) + 1;
+  const nextTier = nextTierIdx < TIER_LADDER.length ? TIER_LADDER[nextTierIdx] : null;
+
+  return {
+    rating,
+    level,
+    winRate,
+    totalGames,
+    tier: matchedTier,
+    nextTier
+  };
+}
+
+// 根据玩家当前段位等级智能匹配同水平在线对手
+function generateMatchedOpponent() {
+  const info = calcPlayerTierAndLevel(playerProfile);
+  const myTierId = info.tier.id;
+
+  // 优先筛选同段位或相邻 ±1 段位的对手
+  const candidates = ONLINE_OPPONENT_POOL.filter(o => Math.abs(o.tierId - myTierId) <= 1);
+  const picked = candidates[Math.floor(Math.random() * candidates.length)] || ONLINE_OPPONENT_POOL[0];
+  const oppTier = TIER_LADDER.find(t => t.id === picked.tierId) || TIER_LADDER[0];
+
+  // 对手等级与积分围绕玩家当前等级微调，保证旗鼓相当
+  const levelJitter = Math.floor(Math.random() * 3) - 1;
+  const oppLevel = Math.max(1, info.level + levelJitter);
+  const oppScore = Math.max(10, playerProfile.score + Math.floor((Math.random() - 0.45) * 60));
+  const oppWinRate = Math.min(88, Math.max(40, picked.winRate + Math.floor(Math.random() * 5) - 2));
+
+  currentOpponent = {
+    name: picked.name,
+    avatar: picked.avatar,
+    level: oppLevel,
+    tierName: oppTier.name,
+    tierShort: oppTier.short,
+    score: oppScore,
+    winRate: oppWinRate,
+    aiDepth: oppTier.aiDepth
+  };
+
+  updateHallHeaderUI();
+  return currentOpponent;
+}
+
+function updateHallHeaderUI() {
+  const info = calcPlayerTierAndLevel(playerProfile);
+  document.getElementById('myAvatarIcon').textContent = playerProfile.avatar;
+  document.getElementById('myNicknameText').textContent = playerProfile.registered ? playerProfile.nickname : '点击注册';
+  document.getElementById('myTierBadge').textContent = `Lv.${info.level} ${info.tier.short}`;
+  document.getElementById('myStatsLine').textContent =
+    `积分:${playerProfile.score} · 胜率:${info.winRate}%(${playerProfile.wins}胜${playerProfile.losses}负)`;
+
+  if (gameMode === 'ai') {
+    document.getElementById('oppAvatarIcon').textContent = currentOpponent.avatar;
+    document.getElementById('oppNicknameText').textContent = currentOpponent.name;
+    document.getElementById('oppTierBadge').textContent = `Lv.${currentOpponent.level} ${currentOpponent.tierShort}`;
+    document.getElementById('oppStatsLine').textContent =
+      `积分:${currentOpponent.score} · 胜率:${currentOpponent.winRate}%`;
+  } else {
+    document.getElementById('oppAvatarIcon').textContent = '🧑‍🤝‍🧑';
+    document.getElementById('oppNicknameText').textContent = '同屏好友2P';
+    document.getElementById('oppTierBadge').textContent = '本地对战';
+    document.getElementById('oppStatsLine').textContent = '同屏轮流操作';
+  }
+}
+
+/* =========================================================
+ * 3. 游戏核心状态与您定制的全部规则
+ * =========================================================
+ * 已累计实现的全部定制规则：
+ * 1) 首翻定色：自己第一次翻牌的颜色即为本局自己的阵营颜色。
+ * 2) 弱者碰强者自杀：弱子主动走入相邻强子格则自杀灭亡（含8象撞1鼠）。
+ * 3) 未完全翻完牌前（unflipped > 0）：若玩家1重复步骤3次，玩家2不能连续紧逼3次，否则犯规认输。
+ * 4) 全部翻牌后（unflipped === 0）：
+ *    - 若双方各剩1张且大小不同，直接比大小决定胜负，无需再走牌；
+ *    - 若双方各剩1张且大小相同，谁能主动对子谁胜；
+ *    - 全部翻牌后，双方各走十步（共20步）若无吃子或兑子，则直接判为和棋。
+ * 5) 胜局积分规则：每局获胜后，每剩1张牌 +10分；额外奖励：剩大象+10分、剩狮子+5分、剩老虎+3分、剩老鼠+20分。
+ * 6) 玩家注册、等级段位评定（根据水平/在线赢输/积分）与同段位智能匹配系统。
+ */
+
+let board = [];
+let playerColor = null;
+let currentTurn = 'red';
+let gameMode = 'ai';
+let selectedIndex = null;
+let lastMove = null;
+let gameOver = false;
+let aiTimer = null;
+
+// 全部翻开后各走十步（共20步）无吃子或兑子判和计数器
+let noCaptureStepsAfterAllFlipped = 0;
+
+// 未完全翻完棋子前：重复步骤与连续紧逼检测状态
+let preFlipMoveHistory = { red: [], blue: [] };
+let consecutiveChaseCount = { red: 0, blue: 0 };
+
+function getAdjacentIndices(idx) {
+  const r = Math.floor(idx / 4);
+  const c = idx % 4;
+  const list = [];
+  if (r > 0) list.push((r - 1) * 4 + c);
+  if (r < 3) list.push((r + 1) * 4 + c);
+  if (c > 0) list.push(r * 4 + (c - 1));
+  if (c < 3) list.push(r * 4 + (c + 1));
+  return list;
+}
+
+function getCombatOutcome(attacker, defender) {
+  if (attacker.rank === defender.rank) return 'trade';
+  if (attacker.rank === 1 && defender.rank === 8) return 'eat';
+  if (attacker.rank === 8 && defender.rank === 1) return 'suicide';
+  return attacker.rank > defender.rank ? 'eat' : 'suicide';
+}
+
+function canPieceStrictlyEat(attacker, defender) {
+  return getCombatOutcome(attacker, defender) === 'eat';
+}
+
+function calcWinnerScoreBreakdown(winnerColor) {
+  let pieceCount = 0;
+  let bonusList = [];
+  let bonusPoints = 0;
+
+  for (let i = 0; i < 16; i++) {
+    const p = board[i];
+    if (p && p.color === winnerColor) {
+      pieceCount++;
+      if (p.rank === 8) {
+        bonusPoints += 10;
+        bonusList.push('大象+10');
+      } else if (p.rank === 7) {
+        bonusPoints += 5;
+        bonusList.push('狮子+5');
+      } else if (p.rank === 6) {
+        bonusPoints += 3;
+        bonusList.push('老虎+3');
+      } else if (p.rank === 1) {
+        bonusPoints += 20;
+        bonusList.push('老鼠+20');
+      }
+    }
+  }
+
+  const basePoints = pieceCount * 10;
+  const totalAdded = basePoints + bonusPoints;
+  return {
+    pieceCount,
+    basePoints,
+    bonusPoints,
+    bonusList,
+    totalAdded
+  };
+}
+
+function isPlayerRepeatingSteps3Times(color) {
+  const hist = preFlipMoveHistory[color];
+  if (hist.length < 3) return false;
+  const m1 = hist[hist.length - 1];
+  const m2 = hist[hist.length - 2];
+  const m3 = hist[hist.length - 3];
+  return (
+    m1.pieceId === m2.pieceId &&
+    m2.pieceId === m3.pieceId &&
+    m1.from === m2.to &&
+    m1.to === m2.from &&
+    m2.from === m3.to &&
+    m2.to === m3.from
+  );
+}
+
+function doesMoveThreatenEnemy(boardState, toIdx, moverColor) {
+  const moverPiece = boardState[toIdx];
+  if (!moverPiece || !moverPiece.revealed) return false;
+  const adj = getAdjacentIndices(toIdx);
+  for (const nIdx of adj) {
+    const target = boardState[nIdx];
+    if (target && target.revealed && target.color !== moverColor) {
+      if (canPieceStrictlyEat(moverPiece, target)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function initGame() {
+  if (aiTimer) clearTimeout(aiTimer);
+  board = [];
+  let pid = 1;
+  ['red', 'blue'].forEach(color => {
+    for (let rk = 1; rk <= 8; rk++) {
+      board.push({
+        id: pid++,
+        color,
+        rank: rk,
+        name: ANIMAL_META[rk].name,
+        revealed: false
+      });
+    }
+  });
+
+  for (let i = board.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [board[i], board[j]] = [board[j], board[i]];
+  }
+
+  playerColor = null;
+  currentTurn = 'red';
+  selectedIndex = null;
+  lastMove = null;
+  gameOver = false;
+  noCaptureStepsAfterAllFlipped = 0;
+  preFlipMoveHistory = { red: [], blue: [] };
+  consecutiveChaseCount = { red: 0, blue: 0 };
+
+  document.getElementById('resultModal').classList.remove('show');
+  updateCampBadge();
+  updateHallHeaderUI();
+  renderBoard();
+  updateStatusUI();
+}
+
+function updateCampBadge() {
+  const badge = document.getElementById('campBadge');
+  badge.className = 'camp-badge';
+  if (!playerColor) {
+    badge.classList.add('camp-unset');
+    badge.textContent = '首翻定色(请翻牌)';
+  } else if (playerColor === 'red') {
+    badge.textContent = '我是红方';
+  } else {
+    badge.classList.add('camp-blue');
+    badge.textContent = '我是蓝方';
+  }
+}
+
+function updateStatusUI() {
+  const turnText = document.getElementById('turnText');
+  const remainText = document.getElementById('remainText');
+  const turnDot = document.getElementById('turnDot');
+
+  let redCount = 0;
+  let blueCount = 0;
+  let unflippedCount = 0;
+  board.forEach(p => {
+    if (p) {
+      if (p.color === 'red') redCount++;
+      else blueCount++;
+      if (!p.revealed) unflippedCount++;
+    }
+  });
+
+  if (unflippedCount === 0 && (redCount > 1 || blueCount > 1)) {
+    const remainSteps = Math.max(0, 20 - noCaptureStepsAfterAllFlipped);
+    remainText.textContent = `红:${redCount} 蓝:${blueCount} (和棋倒计:${remainSteps}步)`;
+  } else {
+    remainText.textContent = `红:${redCount} 蓝:${blueCount}`;
+  }
+
+  if (gameOver) return;
+
+  if (!playerColor) {
+    turnText.textContent = '请翻开任意「?」方块确定本局阵营';
+    turnDot.style.background = '#ffea59';
+    return;
+  }
+
+  const isMyTurn = (gameMode === 'pvp') || (currentTurn === playerColor);
+  const colorLabel = currentTurn === 'red' ? '红方' : '蓝方';
+  turnDot.style.background = currentTurn === 'red' ? '#ff6b81' : '#4dabf7';
+
+  if (gameMode === 'ai') {
+    turnText.textContent = isMyTurn
+      ? `轮到你行动（${colorLabel}）`
+      : `对手「${currentOpponent.name}」思考中...`;
+  } else {
+    turnText.textContent = `当前回合：${colorLabel}行动`;
+  }
+}
+
+function renderBoard() {
+  const grid = document.getElementById('boardGrid');
+  grid.innerHTML = '';
+
+  const validActionMap = new Map();
+  if (selectedIndex !== null && board[selectedIndex]) {
+    const selPiece = board[selectedIndex];
+    getAdjacentIndices(selectedIndex).forEach(adj => {
+      const target = board[adj];
+      if (!target) {
+        validActionMap.set(adj, 'move');
+      } else if (target.revealed && target.color !== selPiece.color) {
+        const outcome = getCombatOutcome(selPiece, target);
+        validActionMap.set(adj, outcome);
+      }
+    });
+  }
+
+  for (let i = 0; i < 16; i++) {
+    const slot = document.createElement('div');
+    slot.className = 'cell-slot';
+    const actionType = validActionMap.get(i);
+    if (actionType) {
+      slot.classList.add(actionType === 'suicide' ? 'valid-suicide' : 'valid-target');
+    }
+    slot.addEventListener('click', () => onCellClick(i));
+
+    const p = board[i];
+    if (p) {
+      const card = document.createElement('div');
+      if (!p.revealed) {
+        card.className = 'piece-card mystery';
+      } else {
+        card.className = `piece-card revealed ${p.color}`;
+        if (selectedIndex === i) card.classList.add('selected');
+        card.innerHTML = `
+          <span class="rank-dot">${p.rank}</span>
+          ${getAnimalSVG(p.rank)}
+          <span class="animal-name-tag">${p.name}</span>
+        `;
+      }
+
+      if (actionType === 'eat') {
+        const tag = document.createElement('div');
+        tag.className = 'action-tag tag-eat';
+        tag.textContent = '⚔️可吃';
+        card.appendChild(tag);
+      } else if (actionType === 'trade') {
+        const tag = document.createElement('div');
+        tag.className = 'action-tag tag-trade';
+        tag.textContent = '💥同归';
+        card.appendChild(tag);
+      } else if (actionType === 'suicide') {
+        const tag = document.createElement('div');
+        tag.className = 'action-tag tag-suicide';
+        tag.textContent = '💀自杀';
+        card.appendChild(tag);
+      }
+
+      if (lastMove && lastMove.to === i) {
+        const badge = document.createElement('div');
+        badge.className = 'last-step-badge';
+        badge.textContent = '上一步';
+        card.appendChild(badge);
+      }
+
+      slot.appendChild(card);
+    }
+
+    grid.appendChild(slot);
+  }
+}
+
+function onCellClick(idx) {
+  if (gameOver) return;
+  if (gameMode === 'ai' && playerColor && currentTurn !== playerColor) {
+    showToast('请等待对手行动...');
+    return;
+  }
+
+  const clicked = board[idx];
+
+  if (selectedIndex !== null) {
+    const selPiece = board[selectedIndex];
+    if (selectedIndex === idx) {
+      selectedIndex = null;
+      renderBoard();
+      return;
+    }
+    if (clicked && clicked.revealed && clicked.color === currentTurn) {
+      selectedIndex = idx;
+      renderBoard();
+      return;
+    }
+
+    const adj = getAdjacentIndices(selectedIndex);
+    if (adj.includes(idx)) {
+      if (!clicked) {
+        executeMove(selectedIndex, idx);
+        return;
+      } else if (clicked.revealed && clicked.color !== selPiece.color) {
+        executeMove(selectedIndex, idx);
+        return;
+      } else if (!clicked.revealed) {
+        showToast('未翻开的暗牌不能直接吃或碰撞哦！');
+        return;
+      }
+    } else {
+      showToast('只能移动到上下左右相邻的格子！');
+      return;
+    }
+  }
+
+  if (!clicked) return;
+
+  if (!clicked.revealed) {
+    flipPiece(idx);
+    return;
+  }
+
+  if (clicked.color === currentTurn) {
+    selectedIndex = idx;
+    renderBoard();
+  } else {
+    showToast('当前不是该颜色棋子的回合！');
+  }
+}
+
+function flipPiece(idx) {
+  const p = board[idx];
+  p.revealed = true;
+  selectedIndex = null;
+  lastMove = { from: null, to: idx, type: 'flip' };
+
+  if (!playerColor) {
+    playerColor = p.color;
+    currentTurn = playerColor;
+    updateCampBadge();
+    const myCampName = playerColor === 'red' ? '红方' : '蓝方';
+    showToast(`首翻定色：本局您是【${myCampName}】！`);
+  }
+
+  preFlipMoveHistory = { red: [], blue: [] };
+  consecutiveChaseCount = { red: 0, blue: 0 };
+
+  renderBoard();
+  if (checkGameEndAfterAction(currentTurn, false)) return;
+  advanceTurn();
+}
+
+function executeMove(fromIdx, toIdx) {
+  const mover = board[fromIdx];
+  const target = board[toIdx];
+  const moverColor = currentTurn;
+  const enemyColor = moverColor === 'red' ? 'blue' : 'red';
+
+  const unflippedBefore = board.filter(p => p && !p.revealed).length;
+
+  let isTradeOnLastOne = false;
+  let hadCaptureOrDeath = false;
+
+  if (!target) {
+    board[toIdx] = mover;
+    board[fromIdx] = null;
+
+    if (unflippedBefore > 0) {
+      preFlipMoveHistory[moverColor].push({
+        pieceId: mover.id,
+        from: fromIdx,
+        to: toIdx
+      });
+
+      const isChasing = doesMoveThreatenEnemy(board, toIdx, moverColor);
+      const enemyRepeated3 = isPlayerRepeatingSteps3Times(enemyColor);
+
+      if (isChasing && (enemyRepeated3 || consecutiveChaseCount[moverColor] > 0)) {
+        consecutiveChaseCount[moverColor]++;
+        if (consecutiveChaseCount[moverColor] === 2) {
+          const warnName = moverColor === 'red' ? '红方' : '蓝方';
+          showToast(`⚠️ 警告：${warnName}已连续紧逼2次，再紧逼1次将犯规认输！`);
+        } else if (consecutiveChaseCount[moverColor] >= 3) {
+          selectedIndex = null;
+          lastMove = { from: fromIdx, to: toIdx, type: 'move' };
+          renderBoard();
+          const foulLabel = moverColor === 'red' ? '红方' : '蓝方';
+          const winLabel = enemyColor === 'red' ? '红方' : '蓝方';
+          finishGame(
+            enemyColor,
+            `🚫 连续紧逼犯规！${winLabel}获胜！`,
+            `在未完全翻完棋子前，一方重复步骤躲避时，${foulLabel}连续紧逼满3次，按规则判${foulLabel}犯规认输！`
+          );
+          return;
+        }
+      } else {
+        consecutiveChaseCount[moverColor] = 0;
+      }
+    }
+  } else {
+    hadCaptureOrDeath = true;
+    preFlipMoveHistory = { red: [], blue: [] };
+    consecutiveChaseCount = { red: 0, blue: 0 };
+
+    const outcome = getCombatOutcome(mover, target);
+    if (outcome === 'trade') {
+      const moverRemainBefore = board.filter(x => x && x.color === mover.color).length;
+      const targetRemainBefore = board.filter(x => x && x.color === target.color).length;
+      if (moverRemainBefore === 1 && targetRemainBefore === 1) {
+        isTradeOnLastOne = true;
+      }
+      board[toIdx] = null;
+      board[fromIdx] = null;
+      showToast(`💥 ${mover.name}与${target.name}同归于尽！`);
+    } else if (outcome === 'eat') {
+      board[toIdx] = mover;
+      board[fromIdx] = null;
+      showToast(`⚔️ ${mover.name} 吃掉了 ${target.name}！`);
+    } else if (outcome === 'suicide') {
+      board[fromIdx] = null;
+      showToast(`💀 ${mover.name} 撞向强者 ${target.name} 自杀灭亡！`);
+    }
+  }
+
+  if (unflippedBefore === 0) {
+    if (hadCaptureOrDeath) {
+      noCaptureStepsAfterAllFlipped = 0;
+    } else {
+      noCaptureStepsAfterAllFlipped++;
+    }
+  } else {
+    noCaptureStepsAfterAllFlipped = 0;
+  }
+
+  selectedIndex = null;
+  lastMove = { from: fromIdx, to: toIdx, type: 'move' };
+  renderBoard();
+
+  if (checkGameEndAfterAction(moverColor, isTradeOnLastOne)) return;
+  advanceTurn();
+}
+
+function advanceTurn() {
+  currentTurn = currentTurn === 'red' ? 'blue' : 'red';
+  updateStatusUI();
+
+  if (!gameOver && gameMode === 'ai' && playerColor && currentTurn !== playerColor) {
+    aiTimer = setTimeout(runSmartAIMove, 460);
+  }
+}
+
+/* =========================================================
+ * 4. 终局判定 + 玩家段位/胜率/积分结算
+ * ========================================================= */
+function checkGameEndAfterAction(actorColor, isTradeOnLastOne) {
+  const redPieces = [];
+  const bluePieces = [];
+  let unflipped = 0;
+
+  for (let i = 0; i < 16; i++) {
+    const p = board[i];
+    if (p) {
+      if (p.color === 'red') redPieces.push({ idx: i, piece: p });
+      else bluePieces.push({ idx: i, piece: p });
+      if (!p.revealed) unflipped++;
+    }
+  }
+
+  if (isTradeOnLastOne && redPieces.length === 0 && bluePieces.length === 0) {
+    const winLabel = actorColor === 'red' ? '红方' : '蓝方';
+    finishGame(actorColor, `🏆 ${winLabel}获胜！`, `最后各剩一张相同牌，${winLabel}主动发起对子获胜！`);
+    return true;
+  }
+
+  if (redPieces.length === 0 && bluePieces.length === 0) {
+    finishGame('draw', '🤝 双方和棋！', '双方棋子同时清空，本局平分秋色！');
+    return true;
+  }
+  if (redPieces.length === 0) {
+    finishGame('blue', '🎉 蓝方获胜！', '红方棋子已全部阵亡，蓝方赢得胜利！');
+    return true;
+  }
+  if (bluePieces.length === 0) {
+    finishGame('red', '🎉 红方获胜！', '蓝方棋子已全部阵亡，红方赢得胜利！');
+    return true;
+  }
+
+  // 全部翻开后，若只剩各一张且大小不同，直接比大小决定胜负
+  if (unflipped === 0 && redPieces.length === 1 && bluePieces.length === 1) {
+    const r = redPieces[0];
+    const b = bluePieces[0];
+    if (r.piece.rank !== b.piece.rank) {
+      const redWins = canPieceStrictlyEat(r.piece, b.piece);
+      if (redWins) {
+        finishGame('red', '🎉 红方获胜！', `全部翻完且最后各剩一张：红方【${r.piece.name}】克制蓝方【${b.piece.name}】，直接获胜！`);
+      } else {
+        finishGame('blue', '🎉 蓝方获胜！', `全部翻完且最后各剩一张：蓝方【${b.piece.name}】克制红方【${r.piece.name}】，直接获胜！`);
+      }
+      return true;
+    }
+  }
+
+  // 全部翻牌后，各走十步（共20步）无吃子或兑子判为和棋
+  if (unflipped === 0 && noCaptureStepsAfterAllFlipped >= 20) {
+    finishGame('draw', '🤝 双方和棋！', '全部翻牌后，双方已各走满十步（共20步）没有吃子或兑子，按规则判为和棋！');
+    return true;
+  }
+
+  return false;
+}
+
+function finishGame(winnerOrDraw, title, desc) {
+  gameOver = true;
+  if (aiTimer) clearTimeout(aiTimer);
+
+  const oldTierInfo = calcPlayerTierAndLevel(playerProfile);
+  const scoreBox = document.getElementById('scoreBreakdownBox');
+
+  if (winnerOrDraw === 'draw' || !winnerOrDraw) {
+    playerProfile.draws++;
+    savePlayerProfile();
+    updateHallHeaderUI();
+
+    const newTierInfo = calcPlayerTierAndLevel(playerProfile);
+    scoreBox.style.display = 'block';
+    scoreBox.innerHTML = `
+      <div><strong>📊 本局排位结算（和棋）：</strong></div>
+      <div>• 在线战绩：${playerProfile.wins}胜 ${playerProfile.losses}负 ${playerProfile.draws}平（胜率 ${newTierInfo.winRate}%）</div>
+      <div>• 当前段位：<strong>${newTierInfo.tier.icon} ${newTierInfo.tier.name} (Lv.${newTierInfo.level})</strong> · 综合战力 ${newTierInfo.rating}</div>
+    `;
+  } else {
+    const info = calcWinnerScoreBreakdown(winnerOrDraw);
+    const winLabel = winnerOrDraw === 'red' ? '红方' : '蓝方';
+    const isPlayerWin = playerColor ? (winnerOrDraw === playerColor) : (winnerOrDraw === 'red');
+
+    if (isPlayerWin) {
+      playerProfile.wins++;
+      playerProfile.streak = Math.max(1, playerProfile.streak + 1);
+      playerProfile.maxStreak = Math.max(playerProfile.maxStreak, playerProfile.streak);
+      // 哪怕最后主动同归于尽剩0张，获胜也保底获得10分基础胜局分
+      const addedScore = Math.max(10, info.totalAdded);
+      playerProfile.score += addedScore;
+
+      savePlayerProfile();
+      updateHallHeaderUI();
+
+      const newTierInfo = calcPlayerTierAndLevel(playerProfile);
+      const bonusStr = info.bonusList.length > 0 ? info.bonusList.join('，') : '无特殊动物存活加成';
+      const rankUpBanner = newTierInfo.level > oldTierInfo.level
+        ? `<div style="margin-top:4px;color:#2b8a3e;font-weight:900;">🎉 恭喜晋升！等级提升至 Lv.${newTierInfo.level}（${newTierInfo.tier.icon} ${newTierInfo.tier.name}）！</div>`
+        : '';
+
+      scoreBox.style.display = 'block';
+      scoreBox.innerHTML = `
+        <div><strong>🏅 我方（${winLabel}）胜局积分明细：</strong></div>
+        <div>• 存活棋子：${info.pieceCount} 张 × 10分 = <strong>+${info.basePoints} 分</strong></div>
+        <div>• 特殊加成：${bonusStr}（<strong>+${info.bonusPoints} 分</strong>）</div>
+        <div>• 本局共获：<strong style="color:#d9480f;font-size:14px;">+${addedScore} 分</strong>（累计积分：<strong>${playerProfile.score}</strong>）</div>
+        <div>• 在线战绩：${playerProfile.wins}胜 ${playerProfile.losses}负（胜率 ${newTierInfo.winRate}% · ${playerProfile.streak}连胜）</div>
+        <div>• 当前段位：<strong>${newTierInfo.tier.icon} ${newTierInfo.tier.name} (Lv.${newTierInfo.level})</strong></div>
+        ${rankUpBanner}
+      `;
+    } else {
+      playerProfile.losses++;
+      playerProfile.streak = 0;
+      savePlayerProfile();
+      updateHallHeaderUI();
+
+      const newTierInfo = calcPlayerTierAndLevel(playerProfile);
+      const bonusStr = info.bonusList.length > 0 ? info.bonusList.join('，') : '无特殊动物加成';
+      scoreBox.style.display = 'block';
+      scoreBox.innerHTML = `
+        <div><strong>📊 对手「${currentOpponent.name}」获胜结算：</strong></div>
+        <div>• 对手存活：${info.pieceCount} 张（+${info.basePoints}分）+ 特殊加成（${bonusStr}）= +${info.totalAdded}分</div>
+        <div>• 我的积分：<strong>${playerProfile.score} 分</strong>（未扣分）</div>
+        <div>• 在线战绩：${playerProfile.wins}胜 ${playerProfile.losses}负（胜率 ${newTierInfo.winRate}%）</div>
+        <div>• 当前段位：<strong>${newTierInfo.tier.icon} ${newTierInfo.tier.name} (Lv.${newTierInfo.level})</strong></div>
+      `;
+    }
+  }
+
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalDesc').textContent = desc;
+  document.getElementById('modalMatchNextBtn').style.display = 'inline-block';
+  document.getElementById('modalAgainBtn').textContent = '🔄 再战本对手';
+  document.getElementById('modalExitBtn').style.display = 'inline-block';
+  document.getElementById('resultModal').classList.add('show');
+  updateStatusUI();
+}
+
+/* =========================================================
+ * 5. 段位自适应 AI 决策引擎（根据匹配对手段位自动调节智商深度）
+ * ========================================================= */
+const PIECE_VALUE = { 8: 115, 7: 92, 6: 75, 5: 56, 4: 42, 3: 30, 2: 20, 1: 88 };
+
+function cloneBoardState(srcBoard) {
+  return srcBoard.map(p => (p ? { ...p } : null));
+}
+
+function getManhDist(idx1, idx2) {
+  const r1 = Math.floor(idx1 / 4), c1 = idx1 % 4;
+  const r2 = Math.floor(idx2 / 4), c2 = idx2 % 4;
+  return Math.abs(r1 - r2) + Math.abs(c1 - c2);
+}
+
+function isSquareDangerous(simBoard, sqIdx, myPiece) {
+  const adj = getAdjacentIndices(sqIdx);
+  for (const nIdx of adj) {
+    const neighbor = simBoard[nIdx];
+    if (neighbor && neighbor.revealed && neighbor.color !== myPiece.color) {
+      if (canPieceStrictlyEat(neighbor, myPiece)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function evaluateBoardState(simBoard, aiColor) {
+  const humanColor = aiColor === 'red' ? 'blue' : 'red';
+  let aiMaterial = 0;
+  let humanMaterial = 0;
+  let positionalBonus = 0;
+
+  const aiPieces = [];
+  const humanPieces = [];
+
+  for (let i = 0; i < 16; i++) {
+    const p = simBoard[i];
+    if (!p) continue;
+    let val = PIECE_VALUE[p.rank];
+    if (p.rank === 1) val += 20;
+    if (p.rank === 8) val += 10;
+
+    if (p.color === aiColor) {
+      aiMaterial += val;
+      if (p.revealed) aiPieces.push({ idx: i, piece: p });
+    } else {
+      humanMaterial += val;
+      if (p.revealed) humanPieces.push({ idx: i, piece: p });
+    }
+  }
+
+  if (humanMaterial === 0 && aiMaterial > 0) return 9999;
+  if (aiMaterial === 0 && humanMaterial > 0) return -9999;
+
+  for (const ap of aiPieces) {
+    if (isSquareDangerous(simBoard, ap.idx, ap.piece)) {
+      positionalBonus -= PIECE_VALUE[ap.piece.rank] * 0.72;
+    }
+    for (const hp of humanPieces) {
+      const dist = getManhDist(ap.idx, hp.idx);
+      if (canPieceStrictlyEat(ap.piece, hp.piece)) {
+        positionalBonus += (6 - dist) * (PIECE_VALUE[hp.piece.rank] * 0.14);
+      } else if (canPieceStrictlyEat(hp.piece, ap.piece)) {
+        positionalBonus -= (6 - dist) * (PIECE_VALUE[ap.piece.rank] * 0.12);
+      }
+    }
+  }
+
+  return (aiMaterial - humanMaterial) + positionalBonus;
+}
+
+function getAllSimMoves(simBoard, sideColor) {
+  const moves = [];
+  for (let i = 0; i < 16; i++) {
+    const p = simBoard[i];
+    if (!p || !p.revealed || p.color !== sideColor) continue;
+    const adj = getAdjacentIndices(i);
+    for (const to of adj) {
+      const target = simBoard[to];
+      if (!target) {
+        moves.push({ from: i, to, outcome: 'move' });
+      } else if (target.revealed && target.color !== sideColor) {
+        const outcome = getCombatOutcome(p, target);
+        moves.push({ from: i, to, outcome });
+      }
+    }
+  }
+  return moves;
+}
+
+function applySimMove(simBoard, move) {
+  const next = cloneBoardState(simBoard);
+  const mover = next[move.from];
+  if (move.outcome === 'move' || move.outcome === 'eat') {
+    next[move.to] = mover;
+    next[move.from] = null;
+  } else if (move.outcome === 'trade') {
+    next[move.to] = null;
+    next[move.from] = null;
+  } else if (move.outcome === 'suicide') {
+    next[move.from] = null;
+  }
+  return next;
+}
+
+function runSmartAIMove() {
+  if (gameOver) return;
+  const aiColor = currentTurn;
+  const humanColor = aiColor === 'red' ? 'blue' : 'red';
+  const unflippedCount = board.filter(p => p && !p.revealed).length;
+
+  const candidateMoves = getAllSimMoves(board, aiColor);
+  let bestMove = null;
+  let bestScore = -Infinity;
+
+  const humanRepeated3 = unflippedCount > 0 && isPlayerRepeatingSteps3Times(humanColor);
+  const aiChaseAlready2 = unflippedCount > 0 && consecutiveChaseCount[aiColor] >= 2;
+
+  // 根据匹配对手段位深度调节 AI 精度（低段位允许少量随机误差，高段位完全精准博弈）
+  const depthTier = currentOpponent.aiDepth || 2;
+  const noiseRange = depthTier === 1 ? 28 : (depthTier === 2 ? 12 : (depthTier === 3 ? 4 : 0));
+
+  for (const mv of candidateMoves) {
+    const mover = board[mv.from];
+    const target = board[mv.to];
+
+    if (mv.outcome === 'suicide') {
+      const myCount = board.filter(x => x && x.color === aiColor).length;
+      if (myCount <= 2) continue;
+    }
+
+    const afterAI = applySimMove(board, mv);
+
+    if (unflippedCount > 0 && mv.outcome === 'move') {
+      const threatens = doesMoveThreatenEnemy(afterAI, mv.to, aiColor);
+      if (threatens && (humanRepeated3 || aiChaseAlready2)) {
+        continue;
+      }
+    }
+
+    let tacticalAdjust = (Math.random() - 0.5) * noiseRange;
+    if (mv.outcome === 'eat' && target) {
+      tacticalAdjust += PIECE_VALUE[target.rank] * 0.45;
+    } else if (mv.outcome === 'trade' && target) {
+      const aiTotal = board.filter(x => x && x.color === aiColor).length;
+      const huTotal = board.filter(x => x && x.color === humanColor).length;
+      if (aiTotal === 1 && huTotal === 1) {
+        tacticalAdjust += 5000;
+      } else if (aiTotal > huTotal) {
+        tacticalAdjust += 18;
+      } else {
+        tacticalAdjust -= 12;
+      }
+    } else if (mv.outcome === 'suicide') {
+      tacticalAdjust -= PIECE_VALUE[mover.rank] * 1.4;
+    }
+
+    let worstReplyScore = evaluateBoardState(afterAI, aiColor);
+    if (depthTier >= 2) {
+      const humanReplies = getAllSimMoves(afterAI, humanColor);
+      if (humanReplies.length > 0) {
+        let minScore = Infinity;
+        for (const hmv of humanReplies) {
+          if (hmv.outcome === 'suicide') continue;
+          const afterHuman = applySimMove(afterAI, hmv);
+          const sc = evaluateBoardState(afterHuman, aiColor);
+          if (sc < minScore) minScore = sc;
+        }
+        if (minScore !== Infinity) worstReplyScore = minScore;
+      }
+    }
+
+    const totalScore = worstReplyScore + tacticalAdjust;
+    if (totalScore > bestScore) {
+      bestScore = totalScore;
+      bestMove = mv;
+    }
+  }
+
+  const unflippedIndices = [];
+  for (let i = 0; i < 16; i++) {
+    if (board[i] && !board[i].revealed) unflippedIndices.push(i);
+  }
+
+  const currentBaseline = evaluateBoardState(board, aiColor);
+
+  if (bestMove && (bestScore > currentBaseline + 8 || unflippedIndices.length === 0)) {
+    executeMove(bestMove.from, bestMove.to);
+    return;
+  }
+
+  if (unflippedIndices.length > 0) {
+    let bestFlipIdx = unflippedIndices[0];
+    let bestFlipSafety = -Infinity;
+
+    for (const idx of unflippedIndices) {
+      const adj = getAdjacentIndices(idx);
+      let safety = Math.random() * 4;
+      for (const nIdx of adj) {
+        const np = board[nIdx];
+        if (np && np.revealed) {
+          if (np.color === humanColor && np.rank >= 6) safety -= 25;
+          if (np.color === aiColor && np.rank >= 6) safety += 10;
+        }
+      }
+      if (safety > bestFlipSafety) {
+        bestFlipSafety = safety;
+        bestFlipIdx = idx;
+      }
+    }
+    flipPiece(bestFlipIdx);
+    return;
+  }
+
+  if (bestMove) {
+    executeMove(bestMove.from, bestMove.to);
+  }
+}
+
+/* =========================================================
+ * 6. 玩家注册弹窗、智能段位匹配弹窗、全服排行榜弹窗交互
+ * ========================================================= */
+let toastTimer = null;
+function showToast(msg) {
+  const tip = document.getElementById('toastTip');
+  tip.textContent = msg;
+  tip.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => tip.classList.remove('show'), 1900);
+}
+
+function openProfileModal(isFirstTime) {
+  const info = calcPlayerTierAndLevel(playerProfile);
+  document.getElementById('profileModalTitle').textContent = isFirstTime
+    ? '🎮 棋牌大厅 · 玩家注册登录'
+    : '👑 玩家档案与等级段位中心';
+
+  document.getElementById('nicknameInput').value = playerProfile.nickname;
+
+  // 头像高亮
+  document.querySelectorAll('#avatarPicker .avatar-opt').forEach(el => {
+    el.classList.toggle('selected', el.getAttribute('data-avatar') === playerProfile.avatar);
+  });
+
+  const nextHint = info.nextTier
+    ? `距离下一段位【${info.nextTier.icon} ${info.nextTier.name}】还需 <strong>${Math.max(1, info.nextTier.minRating - info.rating)}</strong> 战力`
+    : '已达全服最高传奇段位！';
+
+  document.getElementById('myProfileSummaryBox').innerHTML = `
+    <div><strong>🆔 账号ID：</strong>${playerProfile.uid} · <strong>当前等级：</strong>Lv.${info.level}（${info.tier.icon} ${info.tier.name}）</div>
+    <div><strong>⭐ 综合战力：</strong>${info.rating}（由累计积分 ${playerProfile.score} + 胜负净值 + 胜率连胜加成综合评定）</div>
+    <div><strong>📊 在线战绩：</strong>${playerProfile.wins}胜 ${playerProfile.losses}负 ${playerProfile.draws}平 · 胜率 ${info.winRate}% · 最高 ${playerProfile.maxStreak} 连胜</div>
+    <div><strong>🚀 晋级进度：</strong>${nextHint}</div>
+  `;
+
+  // 渲染8大段位表
+  const tbody = document.getElementById('tierLadderBody');
+  tbody.innerHTML = TIER_LADDER.map(t => `
+    <tr class="${t.id === info.tier.id ? 'current-tier-row' : ''}">
+      <td>${t.icon} ${t.name}${t.id === info.tier.id ? ' (当前)' : ''}</td>
+      <td>Lv.${t.minLv}~${t.maxLv}</td>
+      <td>${t.desc}</td>
+    </tr>
+  `).join('');
+
+  document.getElementById('profileModal').classList.add('show');
+}
+
+// 头像选择点击
+document.querySelectorAll('#avatarPicker .avatar-opt').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('#avatarPicker .avatar-opt').forEach(x => x.classList.remove('selected'));
+    el.classList.add('selected');
+  });
+});
+
+document.getElementById('saveProfileBtn').addEventListener('click', () => {
+  const nameVal = document.getElementById('nicknameInput').value.trim();
+  const selAvatarEl = document.querySelector('#avatarPicker .avatar-opt.selected');
+  playerProfile.nickname = nameVal.length >= 1 ? nameVal : '森林棋王';
+  playerProfile.avatar = selAvatarEl ? selAvatarEl.getAttribute('data-avatar') : '🐯';
+  playerProfile.registered = true;
+  savePlayerProfile();
+  updateHallHeaderUI();
+  document.getElementById('profileModal').classList.remove('show');
+  showToast(`欢迎进入大厅，${playerProfile.nickname}！`);
+});
+
+document.getElementById('resetStatsBtn').addEventListener('click', () => {
+  playerProfile.score = 0;
+  playerProfile.wins = 0;
+  playerProfile.losses = 0;
+  playerProfile.draws = 0;
+  playerProfile.streak = 0;
+  playerProfile.maxStreak = 0;
+  savePlayerProfile();
+  generateMatchedOpponent();
+  openProfileModal(false);
+  showToast('战绩与等级已重置为初始状态！');
+});
+
+document.getElementById('playerCardBtn').addEventListener('click', () => {
+  openProfileModal(false);
+});
+
+// 智能段位匹配流程
+let mmTimer = null;
+function startTierMatchmaking() {
+  if (!playerProfile.registered) {
+    openProfileModal(true);
+    return;
+  }
+
+  gameMode = 'ai';
+  document.getElementById('modeRankedBtn').classList.add('active');
+  document.getElementById('modeLocalBtn').classList.remove('active');
+  document.getElementById('resultModal').classList.remove('show');
+
+  const info = calcPlayerTierAndLevel(playerProfile);
+  document.getElementById('mmTitle').textContent = '📡 正在匹配同段位对手...';
+  document.getElementById('mmDesc').textContent = `当前段位：${info.tier.icon} ${info.tier.name} (Lv.${info.level}) · 正在检索实力相近的在线玩家`;
+  document.getElementById('mmRadarBox').style.display = 'flex';
+  document.getElementById('mmVsBox').style.display = 'none';
+  document.getElementById('mmStartBtn').style.display = 'none';
+  document.getElementById('matchmakingModal').classList.add('show');
+
+  if (mmTimer) clearTimeout(mmTimer);
+  mmTimer = setTimeout(() => {
+    const opp = generateMatchedOpponent();
+    document.getElementById('mmTitle').textContent = '⚔️ 匹配成功！旗鼓相当！';
+    document.getElementById('mmDesc').textContent = `系统已根据您的等级(Lv.${info.level})、胜率(${info.winRate}%)与积分(${playerProfile.score})匹配对手`;
+    document.getElementById('mmRadarBox').style.display = 'none';
+    document.getElementById('mmVsBox').style.display = 'flex';
+
+    document.getElementById('mmMyAvatar').textContent = playerProfile.avatar;
+    document.getElementById('mmMyName').textContent = playerProfile.nickname;
+    document.getElementById('mmMyTier').textContent = `Lv.${info.level} ${info.tier.short}`;
+    document.getElementById('mmMyInfo').textContent = `积分:${playerProfile.score} · 胜率:${info.winRate}%`;
+
+    document.getElementById('mmOppAvatar').textContent = opp.avatar;
+    document.getElementById('mmOppName').textContent = opp.name;
+    document.getElementById('mmOppTier').textContent = `Lv.${opp.level} ${opp.tierShort}`;
+    document.getElementById('mmOppInfo').textContent = `积分:${opp.score} · 胜率:${opp.winRate}%`;
+
+    document.getElementById('mmStartBtn').style.display = 'inline-block';
+  }, 850);
+}
+
+document.getElementById('matchmakingBtn').addEventListener('click', startTierMatchmaking);
+
+document.getElementById('mmStartBtn').addEventListener('click', () => {
+  document.getElementById('matchmakingModal').classList.remove('show');
+  initGame();
+  showToast(`对战开始！对手：${currentOpponent.name} (Lv.${currentOpponent.level})`);
+});
+
+document.getElementById('mmCancelBtn').addEventListener('click', () => {
+  if (mmTimer) clearTimeout(mmTimer);
+  document.getElementById('matchmakingModal').classList.remove('show');
+});
+
+// 全服段位排行榜
+document.getElementById('leaderboardBtn').addEventListener('click', () => {
+  const myInfo = calcPlayerTierAndLevel(playerProfile);
+  const allRows = ONLINE_OPPONENT_POOL.map(o => {
+    const t = TIER_LADDER.find(x => x.id === o.tierId) || TIER_LADDER[0];
+    const lv = Math.min(99, Math.max(1, Math.floor(o.baseScore / 32) + 1));
+    return {
+      isMe: false,
+      name: `${o.avatar} ${o.name}`,
+      tierStr: `${t.icon} Lv.${lv} ${t.short}`,
+      winRateStr: `${o.winRate}%`,
+      score: o.baseScore
+    };
+  });
+
+  allRows.push({
+    isMe: true,
+    name: `${playerProfile.avatar} ${playerProfile.nickname} (我)`,
+    tierStr: `${myInfo.tier.icon} Lv.${myInfo.level} ${myInfo.tier.short}`,
+    winRateStr: `${myInfo.winRate}% (${myInfo.totalGames}局)`,
+    score: playerProfile.score
+  });
+
+  allRows.sort((a, b) => b.score - a.score);
+
+  const tbody = document.getElementById('leaderboardBody');
+  tbody.innerHTML = allRows.slice(0, 10).map((r, idx) => `
+    <tr class="${r.isMe ? 'current-tier-row' : ''}">
+      <td>#${idx + 1}</td>
+      <td style="text-align:left;">${r.name}</td>
+      <td>${r.tierStr}</td>
+      <td>${r.winRateStr}</td>
+      <td>${r.score}</td>
+    </tr>
+  `).join('');
+
+  document.getElementById('leaderboardModal').classList.add('show');
+});
+
+document.getElementById('closeLeaderboardBtn').addEventListener('click', () => {
+  document.getElementById('leaderboardModal').classList.remove('show');
+});
+
+// 求和 / 认输 / 全屏 / 模式切换 / 结算按钮
+document.getElementById('btnDraw').addEventListener('click', () => {
+  if (gameOver) return;
+  finishGame('draw', '🤝 双方达成和棋！', '您主动发起求和，双方握手言和！');
+});
+
+document.getElementById('btnResign').addEventListener('click', () => {
+  if (gameOver) return;
+  const loserColor = playerColor || currentTurn;
+  const winnerColor = loserColor === 'red' ? 'blue' : 'red';
+  const winLabel = winnerColor === 'red' ? '红方' : '蓝方';
+  finishGame(winnerColor, `🏳️ 认输结算：${winLabel}获胜！`, '本局已主动投子认输，再接再厉！');
+});
+
+document.getElementById('restartBtn').addEventListener('click', () => {
+  initGame();
+  showToast('已重新洗牌开局！');
+});
+
+document.getElementById('modalMatchNextBtn').addEventListener('click', () => {
+  startTierMatchmaking();
+});
+
+document.getElementById('modalAgainBtn').addEventListener('click', () => {
+  initGame();
+});
+
+document.getElementById('modalExitBtn').addEventListener('click', () => {
+  document.getElementById('resultModal').classList.remove('show');
+  if (document.fullscreenElement) {
+    document.exitFullscreen().catch(() => {});
+  }
+  document.getElementById('gameStage').classList.remove('is-fullscreen');
+  updateFullscreenBtnText();
+  showToast('已退出本局结算界面');
+});
+
+const fullscreenBtn = document.getElementById('fullscreenBtn');
+const gameStage = document.getElementById('gameStage');
+
+function updateFullscreenBtnText() {
+  const isFs = Boolean(document.fullscreenElement) || gameStage.classList.contains('is-fullscreen');
+  fullscreenBtn.textContent = isFs ? '🗗 退出全屏' : '⛶ 全屏';
+  fullscreenBtn.classList.toggle('active', isFs);
+}
+
+fullscreenBtn.addEventListener('click', () => {
+  const isCurrentlyFs = Boolean(document.fullscreenElement) || gameStage.classList.contains('is-fullscreen');
+  if (!isCurrentlyFs) {
+    gameStage.classList.add('is-fullscreen');
+    if (gameStage.requestFullscreen) {
+      gameStage.requestFullscreen().catch(() => {});
+    }
+    showToast('已进入全屏模式');
+  } else {
+    gameStage.classList.remove('is-fullscreen');
+    if (document.fullscreenElement && document.exitFullscreen) {
+      document.exitFullscreen().catch(() => {});
+    }
+    showToast('已退出全屏模式');
+  }
+  updateFullscreenBtnText();
+});
+
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement) {
+    gameStage.classList.remove('is-fullscreen');
+  }
+  updateFullscreenBtnText();
+});
+
+document.getElementById('ruleBtn').addEventListener('click', () => {
+  document.getElementById('modalTitle').textContent = '📜 棋牌版块与专属规则';
+  document.getElementById('modalDesc').innerHTML =
+    '1. <b>玩家注册与段位匹配</b>：点击左上角头像可修改昵称与守护兽；系统根据您的<b>水平(胜率/连胜)、在线赢输场次及累计积分</b>评定 Lv.1~Lv.99 与 8 大段位，并为您匹配对应段位对手。<br>' +
+    '2. <b>首翻定色</b>：本局第一次翻开的牌是什么颜色，您本局就是该颜色阵营。<br>' +
+    '3. <b>克制与弱者自杀</b>：8象&gt;7狮&gt;6虎&gt;5豹&gt;4狼&gt;3狗&gt;2猫&gt;1鼠，且<b>1鼠克8象</b>；弱子碰撞相邻强子可<b>自杀灭亡</b>。<br>' +
+    '4. <b>未翻完牌防长捉</b>：未完全翻完牌前，若一方重复步骤3次，另一方<b>不能连续紧逼3次</b>，否则判犯规认输。<br>' +
+    '5. <b>全翻后十步和棋与残局</b>：全部翻牌后剩各1张直接比大小定胜负；若多张，<b>双方各走十步(共20步)无吃子或兑子</b>则判为和棋。<br>' +
+    '6. <b>胜局积分</b>：每剩1张+10分；额外奖励：<b>大象+10、狮子+5、老虎+3、老鼠+20</b>。';
+  document.getElementById('scoreBreakdownBox').style.display = 'none';
+  document.getElementById('modalMatchNextBtn').style.display = 'none';
+  document.getElementById('modalAgainBtn').textContent = '我知道了';
+  document.getElementById('modalExitBtn').style.display = 'none';
+  document.getElementById('resultModal').classList.add('show');
+  document.getElementById('modalAgainBtn').onclick = () => {
+    document.getElementById('resultModal').classList.remove('show');
+    document.getElementById('modalAgainBtn').onclick = () => initGame();
+  };
+});
+
+document.getElementById('modeRankedBtn').addEventListener('click', () => {
+  gameMode = 'ai';
+  document.getElementById('modeRankedBtn').classList.add('active');
+  document.getElementById('modeLocalBtn').classList.remove('active');
+  startTierMatchmaking();
+});
+
+document.getElementById('modeLocalBtn').addEventListener('click', () => {
+  gameMode = 'pvp';
+  document.getElementById('modeLocalBtn').classList.add('active');
+  document.getElementById('modeRankedBtn').classList.remove('active');
+  initGame();
+  showToast('已切换为：双人同屏对战');
+});
+
+// 启动初始化
+renderChainBar();
+loadPlayerProfile();
+generateMatchedOpponent();
+initGame();
+
+// 若玩家首次进入尚未注册，自动弹出棋牌大厅玩家注册窗口
+if (!playerProfile.registered) {
+  openProfileModal(true);
+}
+</script>
+</body>
+</html>
